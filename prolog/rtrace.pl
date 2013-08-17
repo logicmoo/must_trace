@@ -163,13 +163,18 @@ quietly(Goal):- tracing -> redo_call_cleanup(notrace,Goal,trace); Goal.
 % Start RTracer.
 %
 
-rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; 
-   ((notrace,assert(t_l:rtracing),push_tracer,      
+% rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; start_rtrace). 
+rtrace:- start_rtrace.
+start_rtrace:- leash(-all),
+      notrace,nodebug,
+      retractall(t_l:rtracing),assert(t_l:rtracing),
       set_prolog_flag(access_level,system),
-      push_guitracer,set_prolog_flag(gui_tracer,false),
-      visible(+all),visible(+exception),
-      maybe_leash(-all),
-      maybe_leash(+exception),debug,trace))).
+      push_guitracer,
+      set_prolog_flag(gui_tracer,false),
+      visible(+all),
+      visible(+exception),
+      maybe_leash(+exception),
+      debug,trace,!.
 
 :- '$set_predicate_attribute'(rtrace, trace, 0).
 :- '$set_predicate_attribute'(rtrace, hide_childs, 1).
@@ -190,10 +195,10 @@ srtrace:- notrace, set_prolog_flag(access_level,system), rtrace.
 % Stop Tracer.
 %
 stop_rtrace:- 
-  notrace,
   ignore(pop_guitracer),
   leash(+all),
   visible(+all),
+  maybe_leash(+exception),
   retractall(t_l:rtracing),
   !.
 
@@ -216,7 +221,7 @@ nortrace:- stop_rtrace,ignore(pop_tracer).
 %
 restore_trace(Goal):- !,
   each_call_cleanup(push_tracer,Goal,pop_tracer).
-restore_trace(Goal):- 
+restore_trace0(Goal):- 
   '$leash'(OldL, OldL),'$visible'(OldV, OldV),
    scce_orig(restore_leash_visible,
    ((Goal*-> (push_leash_visible, '$leash'(_, OldL),'$visible'(_, OldV)) ; fail)),
@@ -239,7 +244,10 @@ restore_leash_visible:- once(rtrace('$leash_visible'(OldL1,OldV1))->('$leash'(_,
 % Trace a goal non-interactively until the first exception on
 %  total failure
 %
-rtrace(Goal):- 
+
+rtrace(Goal):- !, restore_trace(each_call_cleanup(start_rtrace,Goal,stop_rtrace)).
+
+rtrace(Goal):-
   push_tracer,!,rtrace,trace,
   ((Goal,notrace,deterministic(YN))*->
     (YN == true -> pop_tracer ; next_rtrace);

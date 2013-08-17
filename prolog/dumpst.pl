@@ -13,7 +13,8 @@
 :- module(dumpst,[
           getPFA/3,getPFA1/3,getPFA2/3,get_m_opt/4,fdmsg/1,fdmsg1/1,
           neg1_numbervars/3,clauseST/2,
-          dtrace/0,dtrace/1,dtrace/2,
+          % dtrace/0,
+          dtrace/1,dtrace/2,
           dumptrace/1,dumptrace/2,dumptrace0/1,dumptrace1/1,
           dumptrace_ret/1,
           drain_framelist/1,
@@ -56,7 +57,8 @@
 :- module_transparent
           getPFA/3,getPFA1/3,getPFA2/3,get_m_opt/4,fdmsg/1,fdmsg1/1,
           neg1_numbervars/3,clauseST/2,
-          dtrace/0,dtrace/1,dtrace/2,
+          % dtrace/0,
+          dtrace/1,dtrace/2,
           dumptrace/1,dumptrace/2,
           dumptrace_ret/1,
           dump_st/0,
@@ -471,6 +473,7 @@ end_dump(GG):-compound(GG),functor(GG,F,_),atom_concat(dump,_,F),nb_setval('$hid
 % dtrace/0/1/2
 % =====================
 
+:- redefine_system_predicate(system:dtrace()).
 system:dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpST(30),abort)).
 %= 	 	 
 
@@ -478,6 +481,7 @@ system:dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpS
 %
 % (debug) Trace.
 %
+:- redefine_system_predicate(system:dbreak()).
 system:dbreak:- wdmsg("DUMP_BREAK/0"), (thread_self_main->dtrace(system:break);true).
 
 :- thread_local(tlbugger:has_auto_trace/1).
@@ -495,11 +499,12 @@ dtrace(G):- strip_module(G,_,dbreak),\+ thread_self_main,!.
 % dtrace(G):- notrace((tracing,notrace)),!,wdmsg(tracing_dtrace(G)),
 %   scce_orig(notrace,restore_trace((leash(+all),dumptrace_or_cont(G))),trace).
 
-dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;catch(dumptrace1(G),E,handle_dumptrace_signal(G,E)). %always fails
+dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;catch(dumptrace1(G),E,
+  handle_dumptrace_signal(G,E)),fail. %always fails
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
-%dtrace(G):- % dumptrace_or_cont(G).
-%    catch(dumptrace1(G),E,handle_dumptrace_signal(G,E)).
+dtrace(G):- 
+    catch(dumptrace1(G),E,handle_dumptrace_signal(G,E)).
 
 handle_dumptrace_signal(G,E):-arg(_,v(continue,abort),E),!,wdmsg(continuing(E,G)),notrace,nodebug.
 handle_dumptrace_signal(_,E):-throw(E).
@@ -596,7 +601,7 @@ dumptrace(_,0'm):-!,make,fail.
 dumptrace(G,0'L):-!,xlisting(G),!,fail.
 dumptrace(G,0'l):-!,visible(+all),show_and_do(rtrace(G)).
 % dumptrace(G,0'c):-!, show_and_do((G))*->true;true.
-dumptrace(G,0'r):-!, notrace,(rtrace((G,notrace))),!,fail.
+dumptrace(G,0'r):-!, stop_rtrace,notrace,nortrace,srtrace,(rtrace((trace,G,notrace))),!,fail.
 dumptrace(G,0'f):-!, notrace,(ftrace((G,notrace))),!,fail.
 dumptrace(G,0't):-!,visible(+all),leash(+all),trace,!,G.
 dumptrace(G,10):-!,dumptrace_ret(G).

@@ -832,19 +832,16 @@ is_ftCompound(Goal):-compound(Goal),\+ is_ftVar(Goal).
 %
 % Not Compound.
 %
-
-not_ftCompound(A):- compound(A)-> is_ftVar0(A) ; true.
-% not_ftCompound(A):- is_ftVar(A) -> true ; \+ is_ftCompound(A).
+not_ftCompound(A):- \+ is_ftCompound(A).
 
 :- export(is_ftVar/1).
-
-%=
 
 %% is_ftVar( :TermV) is semidet.
 %
 % If Is A Format Type Variable.
 %
-is_ftVar(V):- notrace(var(V);is_ftVar0(V)).
+is_ftVar(V):- notrace(is_ftVar0(V)).
+is_ftVar0(V):- \+ compound(V),!,var(V).
 is_ftVar0('$VAR'(_)).
 is_ftVar0('$VAR'(_,_)).
 is_ftVar0('avar'(_)).
