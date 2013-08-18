@@ -1752,10 +1752,16 @@ singletons(_).
 :- set_prolog_flag(trace_gc,true).
 :- set_prolog_flag(gc,true).
 :- set_prolog_flag(debug,true).
+:- set_prolog_flag(debugger_write_options,[quoted(true), portray(true), max_depth(1000), attributes(portray),spacing(next_argument)]).
+ put_attr(VV,vn,'YY'),writeq(vv(VV)).
+
+:- set_prolog_flag(toplevel_print_factorized,true). % default false
+:- set_prolog_flag(toplevel_print_anon,true).
+:- set_prolog_flag(toplevel_mode,backtracking). % OR recursive 
+
 */
 :- set_prolog_flag(backtrace_depth,   2000).
 :- set_prolog_flag(backtrace_show_lines, true).
-:- set_prolog_flag(debugger_write_options,[quoted(true), portray(true), max_depth(1000), attributes(portray),spacing(next_argument)]).
 :- set_prolog_flag(debugger_show_context,true).
 
 

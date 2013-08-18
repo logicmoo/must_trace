@@ -111,7 +111,7 @@
             with_show_dmsg/2,
 
 
-source_variables_lwv/1,
+% source_variables_lwv/1,
 term_color0/2,
 ansi_prop/2,
 dmsg_log/3,
@@ -698,7 +698,9 @@ sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),
 %
 % Portray Clause W Variables.
 %
-portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,[variable_names(Vs),numbervars(true),attributes(portray),character_escapes(true),quoted(true)|Options]))),!.
+portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
+  [variable_names(Vs),numbervars(true),
+     attributes(portray), character_escapes(true),quoted(true)|Options]))),!.
 
 %= 	 	 
 
@@ -714,8 +716,15 @@ portray_clause_w_vars(Msg,Vs,Options):- portray_clause_w_vars(current_output,Msg
 %
 % Portray Clause W Variables.
 %
-portray_clause_w_vars(Msg,Options):- source_variables_lwv(Vs),portray_clause_w_vars(current_output,Msg,Vs,Options).
+portray_clause_w_vars(Msg,Options):- source_variables_lwv(Msg,Vs),portray_clause_w_vars(current_output,Msg,Vs,Options).
 
+grab_varnames(Msg,Vs2):- term_attvars(Msg,AttVars),grab_varnames2(AttVars,Vs2).
+
+grab_varnames2([],[]):-!.
+grab_varnames2([AttV|AttVS],Vs2):-
+    grab_varnames2(AttVS,VsMid),!,
+     (get_attr(AttV,vn,Name) -> Vs2 = [Name=AttV|VsMid] ; VsMid=       Vs2),!.
+   
 
 
 %= 	 	 
@@ -724,13 +733,13 @@ portray_clause_w_vars(Msg,Options):- source_variables_lwv(Vs),portray_clause_w_v
 %
 % Source Variables Lwv.
 %
-source_variables_lwv(AllS):-
+source_variables_lwv(Msg,AllS):-
   (prolog_load_context(variable_names,Vs1);Vs1=[]),
-  (get_varname_list(Vs2);Vs2=[]),
-  %notrace(catch((parent_goal('$toplevel':'$execute_goal2'(_, Vs3),_);Vs3=[]),E,(writeq(E),Vs3=[]))),
-  ignore(Vs3=[]),
-  append(Vs1,Vs2,Vs12),append(Vs12,Vs3,All),!,list_to_set(All,AllS),
-  set_varname_list( AllS).
+   grab_varnames(Msg,Vs2),
+   notrace(catch((parent_goal('$toplevel':'$execute_goal2'(_, Vs3),_);Vs3=[]),_,Vs3=[])),
+   ignore(Vs3=[]),
+   append(Vs3,Vs2,Vs32),append(Vs32,Vs1,All),!,list_to_set(All,AllS).
+   % set_varname_list( AllS).
 
 
 

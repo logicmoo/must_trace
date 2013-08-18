@@ -51,7 +51,8 @@
 %
 % If :Goal fails trace it 
 %
-on_f_rtrace(Goal):- Goal*->true;rtrace_break(Goal).
+on_f_rtrace(Goal):-  Goal *-> true; ((nortrace,notrace,debugCallWhy(failed(on_f_rtrace(Goal)),Goal)),fail).
+
 
 
 %! on_x_debug( :Goal) is det.
