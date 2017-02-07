@@ -1,4 +1,4 @@
-# When you MUST trace, use selective interactive non-deterministic tracing
+# When you MUST trace, use selective interactivity
 
 This is a miniture part of a very large debugging library...
 Some better parts of that library are not yet added. 
@@ -6,20 +6,24 @@ Some better parts of that library are not yet added.
 Here are current uses:
 
 
-Wrap no_trace/1 over parts of your code you no longer need to watch being stepped thru.
+## Wrap `no_trace/1` over parts of your code you no longer need to stepped thru.
 This is a *nondeterministic* version of notrace/1!
 
-Wrap must/1 over parts of your code you do not trust.
+
+## Wrap `must/1` over parts of your code you do not trust yet.
 If your code fails.. it will rewind to your entry block (at the scope of this declaration) and invoke rtrace/1 .
 If there are 50 steps to your code, it will save you from pushing `creep` 50 times.  
 Instead it turns off the leash to allow you to trace with your eyeballs instead of your fingers
 
-Wrap sanity/1 over parts of your code you want to turn on/off that is only usefull for slow debugging
 
-Wrap nop/1 over parts of your code you do not want to remove or break syntax of
+## Wrap `sanity/1` over parts of your code you want to turn on/off that is only usefull for slow debugging
 
 
-Installation using SWI-Prolog 7.1 or later:
+## Wrap `nop/1` over parts of your code you do not want to quickly comment out yet not break syntax.
+
+
+
+# Installation using SWI-Prolog 7.1 or later:
 
     `?- pack_install(must_trace).`
 
