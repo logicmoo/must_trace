@@ -27,6 +27,7 @@
       reset_tracer/0, % Reset Tracer to "normal"
       on_x_rtrace/1, % Non-intractive tracing when exception occurs 
       maybe_leash/1, % Set leash only when it makes sense
+      maybe_leash/0,
       wdmsg/1 % debug messages
     ]).
 
@@ -46,9 +47,16 @@
         if_may_hide(0), 
 	rtrace(0),
         rtrace_break(0),
+        setup_call_cleanup_percall(0,0,0),
 	no_trace(0).
 
+
+:- use_module(library(debug)).
 if_may_hide(Goal):- call(Goal).
+:- thread_local(t_l:rtracing/0).
+:- '$set_predicate_attribute'(t_l:rtracing, trace, 0).
+:- thread_local(t_l:tracer_reset/1).
+:- '$set_predicate_attribute'(get_trace_reset(_), trace, 0).
 
 % TODO Make a speed,safety,debug Triangle instead of these flags
 :- create_prolog_flag(must_type,debug,[]).
@@ -69,8 +77,10 @@ unless(Goal,OnFail,OnException):-
 must(Goal):- current_prolog_flag(must_type,How),!,
           (How == speed -> call(Goal);
            How == debug -> on_f_rtrace(Goal);
-           How == keep_going -> ignore(on_f_rtrace(Goal))).
-must(Goal):- Goal*->true;assertion_failed(fail, must(Goal)).
+           How == keep_going -> ignore(on_f_rtrace(Goal));
+           on_f_rtrace(Goal)).
+
+must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
 
 
 %! sanity(:Goal) is det.
@@ -79,8 +89,9 @@ must(Goal):- Goal*->true;assertion_failed(fail, must(Goal)).
 %
 sanity(Goal):- current_prolog_flag(must_type,How),!,
           (How == speed -> true;
-           How == debug -> \+ \+ ignore(on_f_rtrace(Goal)));
-           How == keep_going -> \+ \+ ignore(on_x_fail(on_f_rtrace(Goal))).
+           How == debug -> \+ \+ ignore(on_f_rtrace(Goal));
+           How == keep_going -> \+ \+ ignore(on_x_fail(on_f_rtrace(Goal)));
+           assertion(Goal)).
 sanity(Goal):- assertion(Goal).
 
 %! must_once(:Goal) is det.
@@ -178,11 +189,6 @@ get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,CC2,'$visible'(_, O
      (t_l:rtracing->CC2=rtrace;CC2= nortrace),
      (tracing -> CC0 = trace ; CC0 = notrace),
      (current_prolog_flag(gui_tracer, GWas)->CC3=set_prolog_flag(gui_tracer, GWas);CC3=true),!.
-
-:- thread_local(t_l:rtracing/0).
-:- '$set_predicate_attribute'(t_l:rtracing, trace, 0).
-:- thread_local(t_l:tracer_reset/1).
-:- '$set_predicate_attribute'(get_trace_reset(_), trace, 0).
 
 
 %! push_tracer is det.
@@ -298,7 +304,7 @@ rtrace(Goal):-
 % Trace a goal non-interactively and break on first exception 
 % or on total failure
 %
-rtrace_break(Goal):- \+ maybe_leash, !, break(Goal).
+rtrace_break(Goal):- \+ maybe_leash, !, rtrace(Goal).
 rtrace_break(Goal):- rtrace(Goal)*->break;(break,fail).
 :- '$set_predicate_attribute'(rtrace_break(_), trace, 0).
 :- '$set_predicate_attribute'(rtrace_break(_), hide_childs, 0).
