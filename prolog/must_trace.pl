@@ -207,11 +207,18 @@ pop_tracer:- notrace(retract(t_l:tracer_reset(Reset))->Reset;true).
 %
 % Reset Tracer.
 %
-reset_tracer:- notrace(t_l:tracer_reset(Reset)->Reset;true).
+reset_tracer:- notrace(ignore(t_l:tracer_reset(Reset)->Reset;true)).
 :- '$set_predicate_attribute'(reset_tracer, trace, 0).
 :- '$set_predicate_attribute'(reset_tracer, hide_childs, 1).
 
 
+% Make sure interactive debugging is turned back on
+user:prolog_exception_hook(error(_, _),_, _, _) :- 
+     reset_tracer ->
+     maybe_leash ->
+     t_l:rtracing ->
+     leash(+all),
+     fail.
 
 %! no_trace( :Goal) is det.
 %
@@ -271,9 +278,10 @@ restore_trace(Goal):-
 :- '$set_predicate_attribute'(restore_trace, hide_childs, 1).
 
 
-%! rtrace( :Goal) is det.
+%! rtrace( :Goal) is nondet.
 %
-% Trace a goal non-interactively
+% Trace a goal non-interactively until the first exception on
+%  total failure
 %
 rtrace(Goal):- 
   push_tracer,!,rtrace,trace,
@@ -285,6 +293,12 @@ rtrace(Goal):-
 :- '$set_predicate_attribute'(rtrace(_), hide_childs, 0).
 
 
+%! rtrace_break( :Goal) is nondet.
+%
+% Trace a goal non-interactively and break on first exception 
+% or on total failure
+%
+rtrace_break(Goal):- \+ maybe_leash, !, break(Goal).
 rtrace_break(Goal):- rtrace(Goal)*->break;(break,fail).
 :- '$set_predicate_attribute'(rtrace_break(_), trace, 0).
 :- '$set_predicate_attribute'(rtrace_break(_), hide_childs, 0).
