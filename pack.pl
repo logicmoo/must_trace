@@ -1,7 +1,7 @@
 name(must_trace).
 title('When you MUST trace, use selective interactive non-deterministic tracing.').
 
-version('0.0.3').
+version('0.0.4').
 download('https://github.com/TeamSPoon/must_trace/releases/*.zip').
 
 author( 'Douglas R. Miles', 'logicmoo@gmail.com' ).
