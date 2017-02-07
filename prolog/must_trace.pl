@@ -79,7 +79,7 @@ must(Goal):- Goal*->true;assertion_failed(fail, must(Goal)).
 %
 sanity(Goal):- current_prolog_flag(must_type,How),!,
           (How == speed -> true;
-           How == debug -> \+ \+ ignore(on_f_rtrace(Goal))).
+           How == debug -> \+ \+ ignore(on_f_rtrace(Goal)));
            How == keep_going -> \+ \+ ignore(on_x_fail(on_f_rtrace(Goal))).
 sanity(Goal):- assertion(Goal).
 
