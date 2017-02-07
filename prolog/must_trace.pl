@@ -18,7 +18,7 @@
       must_once/1, % Goal must succeed at most once
       must_det/1, % Goal must succeed determistically
       sanity/1,  % like assertion but adds trace control
-      nop/1 % syntactic comment
+      nop/1, % syntactic comment
       rtrace/1,  % Non-intractive tracing
       no_trace/1,  % Non-det notrace/1
       restore_trace/1, % After call restor tracer
