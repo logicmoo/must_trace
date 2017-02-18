@@ -1,7 +1,7 @@
 name(must_trace).
-title('When you MUST trace, use selective interactive non-deterministic tracing.').
+title('Trace with your eyeballs instead of your fingers').
 
-version('0.0.4').
+version('0.0.6').
 download('https://github.com/TeamSPoon/must_trace/releases/*.zip').
 
 author( 'Douglas R. Miles', 'logicmoo@gmail.com' ).

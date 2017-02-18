@@ -1,25 +1,24 @@
-# When you MUST trace, use selective interactivity
+# Trace with your eyeballs instead of your fingers
 
 This is a miniture part of a very large debugging library...
 Some better parts of that library are not yet added. 
 
 Here are current uses:
 
-
-## Wrap `no_trace/1` over parts of your code you no longer need to stepped thru.
+Wrap `no_trace/1` over parts of your code you no longer need to stepped thru.
 This is a *nondeterministic* version of notrace/1!
 
 
-## Wrap `must/1` over parts of your code you do not trust yet.
+Wrap `must/1` over parts of your code you do not trust yet.
 If your code fails.. it will rewind to your entry block (at the scope of this declaration) and invoke rtrace/1 .
 If there are 50 steps to your code, it will save you from pushing `creep` 50 times.  
 Instead it turns off the leash to allow you to trace with your eyeballs instead of your fingers
 
 
-## Wrap `sanity/1` over parts of your code you want to turn on/off that is only usefull for slow debugging
+Wrap `sanity/1` over parts of your code you want to turn on/off that is only usefull for slow debugging
 
 
-## Wrap `nop/1` over parts of your code you do not want to quickly comment out yet not break syntax.
+Wrap `nop/1` over parts of your code you do not want to quickly comment out yet not break syntax.
 
 
 
@@ -31,14 +30,15 @@ Instead it turns off the leash to allow you to trace with your eyeballs instead 
 
     `?- pack_install('https://github.com/TeamSPoon/must_trace.git'). `
 
-This module uses [semantic versioning](http://semver.org/).
+
 
 TODO Document all the preds!
-TODO Examples!
+TODO More Examples!
 
 
 Source code available and pull requests accepted at
 http://github.com/TeamSPoon/must_trace
+
 
 ```prolog
 

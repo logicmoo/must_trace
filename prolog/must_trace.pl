@@ -11,7 +11,6 @@
 % ===================================================================
 */
 
-% File: /opt/PrologMUD/pack/logicmoo_base/prolog/logicmoo/util/logicmoo_util_rtrace.pl
 :- module(must_trace,
    [
       must/1, % Goal must succeed at least once once
@@ -19,7 +18,8 @@
       must_det/1, % Goal must succeed determistically
       sanity/1,  % like assertion but adds trace control
       nop/1, % syntactic comment
-      rtrace/1,  % Non-intractive tracing
+      rtrace/1,  % Non-interactive tracing
+      rtrace_break/1,  % Interactive tracing
       no_trace/1,  % Non-det notrace/1
       restore_trace/1, % After call restor tracer
       rtrace/0, % Start non-intractive tracing
@@ -28,7 +28,11 @@
       on_x_rtrace/1, % Non-intractive tracing when exception occurs 
       maybe_leash/1, % Set leash only when it makes sense
       maybe_leash/0,
-      wdmsg/1 % debug messages
+      ftrace/1, % rtrace showing only failures
+      wwdmsg/1, % debug messages
+      non_user_console/0,
+      catch_safe/3,
+      scce_orig/3
     ]).
 
 :- meta_predicate
@@ -43,27 +47,35 @@
         restore_trace(0),
         on_x_rtrace(0),
         on_f_rtrace(0),
-        on_x_fail(0),
-        if_may_hide(0), 
+        %on_x_fail(0),
+        scce_orig(0,0,0),        
 	rtrace(0),
         rtrace_break(0),
         setup_call_cleanup_percall(0,0,0),
 	no_trace(0).
 
 
+:- reexport(library('first')).
+:- reexport(library('ucatch')).
+:- reexport(library('dmsg')).
+:- reexport(library('ansimesg')).
+:- reexport(library('rtrace')).
+:- reexport(library('bugger')).
+:- reexport(library('dumpst')).
+:- reexport(library('frames')).
+
 :- use_module(library(debug)).
-if_may_hide(Goal):- call(Goal).
 :- thread_local(t_l:rtracing/0).
 :- '$set_predicate_attribute'(t_l:rtracing, trace, 0).
 :- thread_local(t_l:tracer_reset/1).
 :- '$set_predicate_attribute'(get_trace_reset(_), trace, 0).
 
 % TODO Make a speed,safety,debug Triangle instead of these flags
-:- create_prolog_flag(must_type,debug,[]).
+:- create_prolog_flag(must_mode,debug,[]).
 
 % Unless Goal succeeds OnFail else OnException
 unless(Goal,OnFail,OnException):- 
-  catch((Goal*->true;OnFail),error(E,C),(wdmsg(error(E,C)),OnException)).
+  catch((Goal*->true;OnFail),error(E,C),(wwdmsg(error(E,C)),OnException)).
 
 %! must(:Goal) is nondet.
 %
@@ -74,7 +86,7 @@ unless(Goal,OnFail,OnException):-
 % If there are 50 steps to your code, it will save you from pushing `creep` 50 times.  
 % Instead it turns off the leash to allow you to trace with your eyeballs instead of your fingers.
 %
-must(Goal):- current_prolog_flag(must_type,How),!,
+must(Goal):- current_prolog_flag(must_mode,How),!,
           (How == speed -> call(Goal);
            How == debug -> on_f_rtrace(Goal);
            How == keep_going -> ignore(on_f_rtrace(Goal));
@@ -87,7 +99,7 @@ must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
 %
 % like assertion but adds trace control
 %
-sanity(Goal):- current_prolog_flag(must_type,How),!,
+sanity(Goal):- current_prolog_flag(must_mode,How),!,
           (How == speed -> true;
            How == debug -> \+ \+ ignore(on_f_rtrace(Goal));
            How == keep_going -> \+ \+ ignore(on_x_fail(on_f_rtrace(Goal)));
@@ -105,7 +117,7 @@ must_once(Goal):- must(Goal),!.
 %
 % Goal must succeed determistically
 %
-must_det(Goal):- must_once((Goal,sanity(detetermistic(true)))).
+must_det(Goal):- must_once((Goal,sanity(deterministic(true)))).
 
 
 %! nop( :Goal) is det.
@@ -115,11 +127,11 @@ must_det(Goal):- must_once((Goal,sanity(detetermistic(true)))).
 nop(_).
 
 
-%! wdmsg( +Term) is det.
+%! wwdmsg( +Term) is det.
 %
-%  `wdmsg(E):-format(user_error,'~N% ~q.',[E]).`
+%  `wwdmsg(E):-format(user_error,'~N% ~q.',[E]).`
 %
-wdmsg(E):-format(user_error,'~N% ~q.',[E]).
+wwdmsg(E):-format(user_error,'~N% ~q.',[E]).
 
 
 %! catch_safe( :Goal, ?E, :GoalRecovery) is nondet.
@@ -137,6 +149,7 @@ catch_safe(Goal,E,Recovery):-
 %
 bubbled_ex('$aborted').
 bubbled_ex('time_limit_exceeded').
+bubbled_ex('$time_limit_exceeded').
 bubbled_ex(block(_,_)).
 
 
@@ -154,11 +167,12 @@ rethrow_bubbled(E):-throw(E).
 %
 on_f_rtrace(Goal):- unless(Goal,rtrace_break(Goal),rtrace_break(Goal)).
 
-%! on_x_fail( :Goal) is det.
+% on_x_fail( :Goal) is det.
 %
 % If there If Is an exception in :Goal just fail
 %
-on_x_fail(Goal):- unless(Goal,fail,fail).
+
+% on_x_fail(Goal):- unless(Goal,fail,fail).
 
 %! on_x_rtrace( :Goal) is det.
 %
@@ -176,8 +190,11 @@ on_x_rtrace(Goal):-
 % Only leashes interactive consoles
 %
 maybe_leash(Some):- maybe_leash->leash(Some);true.
-maybe_leash:- stream_property(current_input, tty(true)),stream_property(current_input,close_on_abort(false)).
 
+maybe_leash:- \+ non_user_console, \+ current_prolog_flag(must_mode,keep_going).
+
+non_user_console:- \+ stream_property(current_input, tty(true)),!.
+non_user_console:- \+ stream_property(current_input,close_on_abort(false)).
 
 %! get_trace_reset( ?Reset) is det.
 %
@@ -240,7 +257,7 @@ no_trace(Goal):-
    '$leash'(OldL, OldL),'$visible'(OldV, OldV),
    (Undo =   notrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
    (RTRACE = notrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
-   setup_call_cleanup_each(RTRACE,(notrace,Goal),Undo).
+   each_call_cleanup(RTRACE,(notrace,Goal),Undo).
 */
 :- '$set_predicate_attribute'(no_trace(_), hide_childs, 1).
 :- '$set_predicate_attribute'(no_trace(_), trace, 0).
@@ -320,11 +337,36 @@ setup_call_cleanup_percall(RTRACE,Goal,Undo):-
 
 
 :- unlock_predicate(system:notrace/1).
-:- if_may_hide('$set_predicate_attribute'(no_trace(_), trace, 0)).
-:- if_may_hide('$set_predicate_attribute'(system:notrace(_), hide_childs, 1)).
-:- if_may_hide('$set_predicate_attribute'(system:notrace(_), trace, 0)).
+%:- if_may_hide('$set_predicate_attribute'(no_trace(_), trace, 0)).
+%:- if_may_hide('$set_predicate_attribute'(system:notrace(_), hide_childs, 1)).
+%:- if_may_hide('$set_predicate_attribute'(system:notrace(_), trace, 0)).
 :- '$set_predicate_attribute'(system:tracing, trace, 0).
 :- '$set_predicate_attribute'(system:notrace, trace, 0).
 :- '$set_predicate_attribute'(system:trace, trace, 0).
 :- lock_predicate(system:notrace/1).
+
+
+
+scce_orig(Setup,Goal,Cleanup):-
+   \+ \+ '$sig_atomic'(Setup), 
+   catch( 
+     ((Goal, deterministic(DET)),
+       '$sig_atomic'(Cleanup),
+         (DET == true -> !
+          ; (true;('$sig_atomic'(Setup),fail)))), 
+      E, 
+      ('$sig_atomic'(Cleanup),throw(E))). 
+
+
+
+%! ftrace( :GoalGoal) is nondet.
+%
+% Functor Trace.
+%
+ftrace(Goal):- restore_trace((
+   visible(-all),visible(+unify),
+   visible(+fail),visible(+exception),
+   maybe_leash(-all),maybe_leash(+exception),trace,Goal)).
+
+
 
