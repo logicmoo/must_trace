@@ -10,7 +10,7 @@
     Maintainers:   TeamSPoon
     E-mail:        logicmoo@gmail.com
     WWW:           http://www.prologmoo.com
-    SCM:           https://github.com/TeamSPoon/PrologMUD/tree/master/pack/logicmoo_base
+    SCM:           https://github.com/TeamSPoon/pack_PrologMUD/tree/master/pack/logicmoo_base
     Copyleft:      1999-2015, LogicMOO Prolog Extensions
     License:       Lesser GNU Public License
 % ===================================================================
@@ -59,22 +59,24 @@ nop(_).
 :- module_transparent(must_or_die/1).
 :- '$hide'(must_or_die/1).
 % must_or_die(Goal):- (catch(Goal,E,(writeq(e_xxXXXXXX_xxxxxxxx_failed_must_or_die(E)),nl,fail)) *-> true ; (dtrace,Goal*->true;throw(failed_must_or_die(Goal)))).
-must_or_die(Goal):- (Goal *-> true ; throw(failed_must_or_die(Goal))).
+system:must_or_die(Goal):- (Goal *-> true ; throw(failed_must_or_die(Goal))).
 
 :- module_transparent(must_atomic/1).
 :- '$hide'(must_atomic/1).
-must_atomic(Goal):- must_or_die(notrace(('$sig_atomic'(Goal)))).
+system:must_atomic(Goal):- must_or_die(notrace(('$sig_atomic'(Goal)))).
 
 :- module_transparent(must_notrace/1).
 :- '$hide'(must_notrace/1).
-must_notrace(Goal):- no_trace(must_or_die(Goal)).
+system:must_notrace(Goal):- no_trace(must_or_die(Goal)).
 
+:- if(\+ current_predicate(no_trace/1)).
 :- module_transparent(no_trace/1).
 :- '$hide'(no_trace/1).
 no_trace(G):- !,call(G).
 no_trace(G):- notrace((tracing,notrace))->
    each_call_cleanup(notrace(notrace),G,notrace(trace)); 
    each_call_cleanup(notrace(notrace),G,notrace(notrace)).
+:- endif.
 
 :- module_transparent(call_cleanup_each/2).
 :- '$hide'(call_cleanup_each/2).

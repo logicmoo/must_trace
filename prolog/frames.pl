@@ -27,6 +27,7 @@
         stack_check_else/2,
         stack_depth/1.
 
+:- set_module(class(library)).
 :- include('logicmoo_util_header.pi').
   
 

@@ -9,7 +9,7 @@
             unnumbervars4/4,
             get_varname_list/1,
             set_varname_list/1,
-            icatch/1,
+            on_xf_cont/1,
             user_ensure_loaded/1,
             user_use_module/1,
             alldiscontiguous/0,
@@ -67,12 +67,14 @@
             qdmsg/1,
             getenv_safe/3,
             var_to_name/3
+
           ]).
+
 
 :- thread_local(tlbugger:ifHideTrace/0).
 :- reexport(library(listing_vars)).
 
-:- abolish(system:nop/1),asserta(system:nop(_)).
+% :- abolish(system:nop/1),asserta(system:nop(_)).
 
 getenv_safe(Name,ValueO,Default):-
    (getenv(Name,RV)->Value=RV;Value=Default),
@@ -92,7 +94,7 @@ qdmsg(M):-debug(logicmoo(M),'QMSG: ~q',[M]).
    mpred_trace_nochilds(:),
 
         mustvv(0),
-        icatch(0),
+        on_xf_cont(0),
         renumbervars_prev(?, ?),
         snumbervars(?),
         snumbervars(*, ?, ?),
@@ -101,7 +103,7 @@ qdmsg(M):-debug(logicmoo(M),'QMSG: ~q',[M]).
 source_context_module/1,
 
 user_ensure_loaded/1,
-icatch/1,
+on_xf_cont/1,
 user_use_module/1,
 alldiscontiguous/0,
 arg_is_transparent/1,
@@ -242,7 +244,7 @@ with_unlocked_pred(Pred,Goal):-
    catch(Goal,_,true),'$set_predicate_attribute'(Pred, system, 1))))).
 
 
-icatch(Goal):- ignore(catch(Goal,_,true)).
+on_xf_cont(Goal):- ignore(catch(Goal,_,true)).
 
 :- export(mpred_trace_less/1).
 
@@ -314,6 +316,7 @@ mpred_trace_all(W) :- forall(match_predicates(W,M,Pred,_,A),(
 %:-mpred_trace_all('$apply':_).
 %:-mpred_trace_all(system:_).
 
+:- set_module(class(library)).
 :- include('logicmoo_util_header.pi').
 
 :- thread_local(tlbugger:ifHideTrace/0).

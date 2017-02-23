@@ -28,7 +28,7 @@ Wrap `nop/1` over parts of your code you do not want to quickly comment out yet 
 
   or
 
-    `?- pack_install('https://github.com/TeamSPoon/must_trace.git'). `
+    `?- pack_install('https://github.com/TeamSPoon/pack_must_trace.git'). `
 
 
 

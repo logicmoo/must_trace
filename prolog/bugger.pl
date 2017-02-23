@@ -14,6 +14,7 @@
 :- module(bugger,
           [ 
           debug_logicmoo/1,
+          swi_module/2,
           nodebug_logicmoo/1,
           debugging_logicmoo/1,
           logicmoo_topic/2,
@@ -43,6 +44,14 @@
             caller_module/1,
             caller_module/2,
             callsc/1,
+
+          all_source_file_predicates_are_transparent/0,
+          all_source_file_predicates_are_transparent/1,
+
+
+          debugCallWhy/2,
+                dont_make_cyclic/1,
+
             cli_ntrace/1,
             cleanup_strings/0,
             debugFmt/1,
@@ -74,7 +83,7 @@
             gripe_time/2,
             on_f_debug/1,
             on_f_debug_ignore/1,
-            on_x_debug/1,
+            
             on_x_debug_cont/1,
             on_x_rtraceEach/1,
             has_gui_debug/0,
@@ -85,7 +94,7 @@
             hideTraceMFAT/4,
             hideTraceMP/3,
             hidetrace/1,
-            hook_message_hook/0,
+            %hook_message_hook/0,
             ifThen/2,
             if_interactive/1,
             if_interactive0/1,
@@ -98,7 +107,7 @@
             isConsole/0,
             is_deterministic/1,
             kill_term_expansion/0,
-            list_difference_eq/3,
+            %list_difference_eq/3,
             list_difference_eq_memberchk_eq/2,
             listify/2,
             loading_module/1,
@@ -205,10 +214,10 @@
             writeOverwritten/0,
             writeSTDERR0/1,
             writeSavedPrompt/0,
-     op(1150,fx,(baseKB:shared_multifile))
+     op(1150,fx,(baseKB:kb_shared))
 
           ]).
-:- meta_predicate with_skip_bugger(0).
+:- meta_predicate with_skip_bugger(0),on_x_fail(0).
 :- meta_predicate 
     do_ref_job(0,*),
         bugger_atom_change(:, -),
@@ -225,10 +234,11 @@
          on_x_rtraceEach(0),
         callsc(0),
         cli_ntrace(0),
-        on_x_debug(0),
+        
         on_x_debug_cont(0),
         on_f_debug(0),
         on_f_debug(0),
+   debugCallWhy(+, 0),
         forall_member(?, ?, 0),
         gmust(0, 0),
         gripe_time(+, 0),
@@ -305,6 +315,7 @@
         hideTraceMFA(+,+,+,+),
         hideTraceMFAT(+,+,+,+),
         doHideTrace(+,+,+,+),
+        dont_make_cyclic(0),
         with_skip_bugger(0).
 
  :- meta_predicate do_ref_job(0,*).
@@ -314,6 +325,7 @@
           nodebug_logicmoo/1,
           debugging_logicmoo/1,
           logicmoo_topic/2,
+                dont_make_cyclic/1,
 
                     show_failure/1,
         asserta_if_ground/1,
@@ -363,14 +375,14 @@
         hideTraceMFA/4,
         hideTraceMFAT/4,
         hideTraceMP/3,
-        hook_message_hook/0,
+        %hook_message_hook/0,
         in_file_directive/0,
         in_file_expansion/0,
         in_toplevel/0,
         isConsole/0,
         is_deterministic/1,
         kill_term_expansion/0,
-        list_difference_eq/3,
+        %list_difference_eq/3,
         list_difference_eq_memberchk_eq/2,
         listify/2,
         loading_module/1,
@@ -432,11 +444,35 @@
 
 
 % :- use_module('logicmoo_util_rtrace').
+:- set_module(class(library)).
 :- include('logicmoo_util_header.pi').
 
 
+%% all_source_file_predicates_are_transparent() is det.
+%
+% All Module Predicates Are Transparent.
+%
+:- module_transparent(all_source_file_predicates_are_transparent/0).
+:- export(all_source_file_predicates_are_transparent/0).
+all_source_file_predicates_are_transparent:-
+  must(prolog_load_context(source,SFile)),all_source_file_predicates_are_transparent(SFile),
+  must(prolog_load_context(file,File)),(SFile==File->true;all_source_file_predicates_are_transparent(File)).
+
+:- module_transparent(all_source_file_predicates_are_transparent/1).
+:- export(all_source_file_predicates_are_transparent/1).
+all_source_file_predicates_are_transparent(File):-
+    debug(logicmoo(loader),'~N~p~n',[all_source_file_predicates_are_transparent(File)]),
+    forall((source_file(ModuleName:P,File),functor(P,F,A)),
+      ignore(( 
+        ignore(( \+ atom_concat('$',_,F), ModuleName:export(ModuleName:F/A))),
+            \+ (predicate_property(ModuleName:P,(transparent))),
+                   % ( nop(dmsg(todo(module_transparent(ModuleName:F/A))))),
+                   (module_transparent(ModuleName:F/A))))).
+
+
+
 :- 
-      op(1150,fx,(baseKB:shared_multifile)),
+      op(1150,fx,(baseKB:kb_shared)),
       op(1150,fx,meta_predicate),
       op(1150,fx,thread_local).
 
@@ -448,7 +484,12 @@
 :- set_prolog_flag(backtrace,true). % default true
 :- set_prolog_flag(debug_on_error,true). % default true
 
+swi_module(M,Preds):- forall(member(P,Preds),M:export(P)). % ,dmsg(swi_module(M)).
 
+
+
+dont_make_cyclic(G):-skipWrapper,!,call(G).
+dont_make_cyclic(G):-cyclic_break(G),!,G,cyclic_break(G).
 
 %% bugger_flag( :TermF) is semidet.
 %
@@ -514,6 +555,15 @@ set_bugger_flag(F,V):-create_prolog_flag(F,V,[keep(true),tCol(ftTerm)]),!.
      on_x_fail/1, % for wrapping code may throw to indicate failure
    must_not_repeat/1)).  % predicate must never bind the same arguments the same way twice
 */
+
+
+
+:-export(on_x_fail/1).
+%% on_x_fail( :Goal) is semidet.
+%
+% If there If Is an exception in :Goal just fail
+%
+on_x_fail(Goal):- catchv(Goal,_,fail).
 
 
 :- meta_predicate(call_count(0,?)).
@@ -610,10 +660,10 @@ throw_safe(Exc):-trace_or_throw(Exc).
 test_for_release(File):-  source_file(File), \+ make:modified_file(File), !.
 test_for_release(File):-  
  G = test_for_release(File),
- each_call_cleanup(dmsg("~N~nPress Ctrl-D to begin ~n~n  :- ~q. ~n~n",[G]),
+  scce_orig(dmsg("~N~nPress Ctrl-D to begin ~n~n  :- ~q. ~n~n",[G]),
   if_interactive(prolog),
    setup_call_cleanup(dmsg("~N~nStarting ~q...~n",[G]),
-      w_tl(t_l:testing_for_release(File),ensure_loaded(File)),
+      locally(t_l:testing_for_release(File),ensure_loaded(File)),
       test_for_release_problems(File))).
 
 
@@ -767,7 +817,7 @@ bad_idea:- current_prolog_flag(bad_idea,true).
 % Wdmsg.
 %
 wdmsg(X):- no_trace(show_source_location),
-   no_trace(with_all_dmsg(dmsg(X))).
+   no_trace(with_all_dmsg(dmsg(X))),!.
 
 
 
@@ -775,14 +825,14 @@ wdmsg(X):- no_trace(show_source_location),
 %
 % Wdmsg.
 %
-wdmsg(F,X):- notrace(ignore(with_all_dmsg(dmsg(F,X)))).
+wdmsg(F,X):- no_trace(ignore(with_all_dmsg(dmsg(F,X)))),!.
 
 
 %% wdmsg( ?F, ?X) is semidet.
 %
 % Wdmsg.
 %
-wdmsg(W,F,X):- notrace(ignore(with_all_dmsg(dmsg(W,F,X)))).
+wdmsg(W,F,X):- no_trace(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 
 
 
@@ -1029,13 +1079,13 @@ has_gui_debug :- getenv('DISPLAY',NV),NV\==''.
 %
 % Nodebugx.
 %
-nodebugx(X):- prolog_debug:debugging(Topic, true, _),!,each_call_cleanup(nodebug(Topic),nodebugx(X),debug(Topic)).
+nodebugx(X):- prolog_debug:debugging(Topic, true, _),!,scce_orig(nodebug(Topic),nodebugx(X),debug(Topic)).
 nodebugx(X):- current_prolog_flag(debug_threads,true),!,call(X).
 nodebugx(X):- 
- wno_tl_e(tlbugger:ifCanTrace,
-   w_tl(tlbugger:ifWontTrace,
-    w_tl(tlbugger:show_must_go_on,
-       w_tl(tlbugger:ifHideTrace,no_trace(X))))).
+ locally(-tlbugger:ifCanTrace,
+   locally(tlbugger:ifWontTrace,
+    locally(tlbugger:show_must_go_on,
+       locally(tlbugger:ifHideTrace,no_trace(X))))).
 
 debugging_logicmoo(Mask):- logicmoo_topic(Mask,Topic),prolog_debug:debugging(Topic, TF, _),!,TF=true.
 
@@ -1223,7 +1273,7 @@ call_skipping_n_clauses(N,H):-
 %
 % Cli N Trace.
 %
-cli_ntrace(X):- tracing -> w_tl( tlbugger:wastracing,call_cleanup((notrace,call(X)),dtrace)) ; call(X).
+cli_ntrace(X):- tracing -> locally( tlbugger:wastracing,call_cleanup((notrace,call(X)),dtrace)) ; call(X).
 
 
 
@@ -1863,15 +1913,6 @@ with_skip_bugger(Goal):-setup_call_cleanup(asserta( tlbugger:skip_bugger,Ref),Go
 
 
 
-%% on_x_debug( :GoalGoal) is semidet.
-%
-% If there If Is A an exception in  :Goal goal then debug.
-%
-on_x_debug(Goal):- !, on_x_rtrace(Goal).
-on_x_debug(Goal):- with_each(0,on_x_rtrace,Goal).
-
-
-
 %% on_x_rtraceEach( :GoalGoal) is semidet.
 %
 % If there If Is A an exception in  :Goal goal then r Trace each.
@@ -1914,6 +1955,12 @@ with_each(Wrapper,Goal):-with_each(1,Wrapper,Goal).
 on_f_debug(Goal):-  Goal *-> true; ((nortrace,notrace,debugCallWhy(failed(on_f_debug(Goal)),Goal)),fail).
 
 
+
+%% debugCallWhy( ?Why, :GoalC) is semidet.
+%
+% Debug Call Generation Of Proof.
+%
+debugCallWhy(Why, C):- wdmsg(Why),catch(dtrace(C),E,wdmsg(cont_X_debugCallWhy(E,Why, C))).
 
 
 %% debugOnFailureEach( :GoalGoal) is semidet.
@@ -1987,10 +2034,10 @@ beenCaught(Goal):- traceAll,dmsg(tracing(Goal)),debug,dtrace,Goal.
 % Using No Term Expansions.
 %
 with_no_term_expansions(Call):-
-  wno_tl(term_expansion(_,_),
-    wno_tl(term_expansion(_,_),
-    wno_tl(goal_expansion(_,_),
-      wno_tl(goal_expansion(_,_),Call)))).
+  locally_hide(term_expansion(_,_),
+    locally_hide(term_expansion(_,_),
+    locally_hide(goal_expansion(_,_),
+      locally_hide(goal_expansion(_,_),Call)))).
 
 
 
@@ -2417,7 +2464,7 @@ time_call(Call):-
 % Gripe Time.
 %
 
-gripe_time(_TooLong,Goal):- nop(flag_call(logicmoo_speed>logicmoo_debug)),!,Goal.
+gripe_time(_TooLong,Goal):- nop(flag_call(runtime_speed>runtime_debug)),!,Goal.
 gripe_time(TooLong,Goal):- statistics(cputime,StartCPU),
   statistics(walltime,[StartWALL,_]),
   NeedGripe=v(yes),
@@ -2984,44 +3031,6 @@ disabled_this:- asserta((user:prolog_exception_hook(Exception, Exception, Frame,
 :- thread_local(tlbugger:no_buggery_tl/0).
 
 
-
-
-%% hook_message_hook is semidet.
-%
-% Hook Message Hook.
-%
-% hook_message_hook
-hook_message_hook:- 
- asserta((
- 
-%  current_predicate(logicmoo_bugger_loaded/0)
-
-user:message_hook(Term, Kind, Lines):- 
- notrace(( 
- loop_check((ignore((
- tlbugger:rtracing,
- \+ \+ 
- catch(((
- (Kind= warning;Kind= error), 
- Term\=syntax_error(_), 
- backtrace(40), \+ baseKB:no_buggery, \+ tlbugger:no_buggery_tl,
- stop_rtrace,trace,
-  dmsg(message_hook(Term, Kind, Lines)),no_trace(dumpST(10)),dmsg(message_hook(Term, Kind, Lines)),
-   !,fail,
-   (sleep(1.0),read_pending_codes(user_input, Chars, []), format(error_error, '~s', [Chars]),flush_output(error_error),!,Chars=[C],
-                dtrace(true,C),!),
-
-   fail)),_,true))),fail)))))).
-
-% have to load this module here so we dont take ownership of prolog_exception_hook/4.
-% :- load_files(library(prolog_stack), [silent(true)]).
-%prolog_stack:stack_guard(none).
-
-% :-hook_message_hook.
-
-%user:prolog_exception_hook(A,B,C,D):- fail,
-%   once(copy_term(A,AA)),catchv(( once(bugger_prolog_exception_hook(AA,B,C,D))),_,fail),fail.
-
 % :- '$hide'(maybe_leash/1).
 % :- '$hide'('$syspreds':visible/1).
 % :- '$hide'('$syspreds':leash/1).
@@ -3037,11 +3046,11 @@ user:message_hook(Term, Kind, Lines):-
 %:-prolog.
 
 :- retract(double_quotes_was(WAS)),set_prolog_flag(double_quotes,WAS).
-% :- mpred_trace_none(w_tl/2).
-% :- '$set_predicate_attribute'(w_tl(_,_), hide_childs, 0).
+% :- mpred_trace_none(locally/2).
+% :- '$set_predicate_attribute'(locally(_,_), hide_childs, 0).
 
 
-:- '$hide'(tlbugger:_/_).
+% :- '$hide'(tlbugger:_/_).
 % :- '$hide'(tlbugger:A/0).
 
 % :- '$hide'(dmsg/1).

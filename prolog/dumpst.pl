@@ -41,8 +41,14 @@
   dumptrace(0),
   dtrace(*,0).
 
-
+/*
+:- use_module(library(rtrace)).
+:- use_module(library(bugger)).
+*/
 :- use_module(library(xlisting)).
+:- use_module(library(loop_check)).
+:- reexport(library(rtrace)).
+
 
 :- set_prolog_flag(backtrace_depth,      200).
 :- set_prolog_flag(backtrace_goal_depth, 20).
@@ -349,7 +355,7 @@ v_name2(Var,Name):- get_varname_list(Vs),format(atom(Name),'~W',[Var, [variable_
 
 %attrs_to_list(att(sk,_,ATTRS),[sk|List]):-!,attrs_to_list(ATTRS,List).
 attrs_to_list(att(vn,_,ATTRS),List):-!,attrs_to_list(ATTRS,List).
-attrs_to_list(att(M,V,ATTRS),[M=VV|List]):- w_tl(tlbugger:plain_attvars,simplify_goal_printed(V,VV)),!,attrs_to_list(ATTRS,List).
+attrs_to_list(att(M,V,ATTRS),[M=VV|List]):- locally(tlbugger:plain_attvars,simplify_goal_printed(V,VV)),!,attrs_to_list(ATTRS,List).
 attrs_to_list([],[]).
 attrs_to_list(_ATTRS,[]).
 
@@ -460,7 +466,7 @@ end_dump(GG):-compound(GG),functor(GG,F,_),atom_concat(dump,_,F),nb_setval('$hid
 % dtrace/0/1/2
 % =====================
 
-system:dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->dtrace(system:trace);(dumpST(30),abort)).
+system:dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpST(30),abort)).
 %= 	 	 
 
 %% dtrace is semidet.
@@ -541,9 +547,9 @@ with_source_module(G):-
 %
 dumptrace(G):- non_user_console,!,dumpST_error(non_user_console+dumptrace(G)),abort,fail.
 dumptrace(G):-
-  w_tl(set_prolog_flag(gui_tracer, false),
-   w_tl(set_prolog_flag(gui, false),
-    w_tl(flag_call(logicmoo_debug= false),
+  locally(set_prolog_flag(gui_tracer, false),
+   locally(set_prolog_flag(gui, false),
+    locally(flag_call(runtime_debug= false),
      dumptrace0(G)))).
 
 dumptrace0(G):- notrace((tracing,notrace,wdmsg(tracing_dumptrace(G)))),!, catch(((dumptrace0(G) *-> dtrace ; (dtrace,fail))),_,true).
@@ -605,4 +611,55 @@ dumptrace(_,C):-fmt(unused_keypress(C)),!,fail.
 %
 dumptrace_ret(G):- notrace((leash(+all),visible(+all),visible(+unify),trace)),G.
 
+
+
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+
+
+%% hook_message_hook is semidet.
+%
+% Hook Message Hook.
+%
+% hook_message_hook
+hook_message_hook:- 
+ asserta((
+ 
+%  current_predicate(logicmoo_bugger_loaded/0)
+
+user:message_hook(Term, Kind, Lines):- 
+ notrace(( 
+ loop_check((ignore((
+ tlbugger:rtracing,
+ \+ \+ 
+ catch(((
+ (Kind= warning;Kind= error), 
+ Term\=syntax_error(_), 
+ backtrace(40), \+ baseKB:no_buggery, \+ tlbugger:no_buggery_tl,
+ stop_rtrace,trace,
+  dmsg(message_hook(Term, Kind, Lines)),no_trace(dumpST(10)),dmsg(message_hook(Term, Kind, Lines)),
+   !,fail,
+   (sleep(1.0),read_pending_codes(user_input, Chars, []), format(error_error, '~s', [Chars]),flush_output(error_error),!,Chars=[C],
+                dtrace(true,C),!),
+
+   fail)),_,true))),fail)))))).
+
+% have to load this module here so we dont take ownership of prolog_exception_hook/4.
+% :- load_files(library(prolog_stack), [silent(true)]).
+%prolog_stack:stack_guard(none).
+
+% :-hook_message_hook.
+
+%user:prolog_exception_hook(A,B,C,D):- fail,
+%   once(copy_term(A,AA)),catchv(( once(bugger_prolog_exception_hook(AA,B,C,D))),_,fail),fail.
 

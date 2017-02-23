@@ -114,7 +114,6 @@
 
 source_variables_lwv/1,
 term_color0/2,
-term_to_message_string/2,
 ansi_prop/2,
 dmsg_log/3,
 dmsg000/1,
@@ -233,6 +232,8 @@ dmsg000/1,
 :- include('logicmoo_util_header.pi').
 :- endif.
 
+:- set_module(class(library)).
+
 :- use_module(system:library(memfile)).
 :- reexport(first).
 %:- system:ensure_loaded(logicmoo_util_rtrace).
@@ -278,46 +279,46 @@ with_output_to_each(Output,Goal):-
 
 %= 	 	 
 
-%% with_all_dmsg( :GoalCall) is semidet.
+%% with_all_dmsg( :Goal) is nondet.
 %
 % Using All (debug)message.
 %
-with_all_dmsg(Call):-
-   w_tl(tlbugger:tl_always_show_dmsg,
-     w_tl(set_prolog_flag(opt_debug,true),
-       w_tl( tlbugger:dmsg_match(show,_),Call))).
+with_all_dmsg(Gaol):-
+   locally(tlbugger:tl_always_show_dmsg,
+     locally(set_prolog_flag(opt_debug,true),
+       locally( tlbugger:dmsg_match(show,_),Gaol))).
 
 
 
 %= 	 	 
 
-%% with_show_dmsg( ?TypeShown, :GoalCall) is semidet.
+%% with_show_dmsg( ?TypeShown, :Goal) is nondet.
 %
 % Using Show (debug)message.
 %
-with_show_dmsg(TypeShown,Call):-
-  w_tl(set_prolog_flag(opt_debug,filter),
-     w_tl( tlbugger:dmsg_match(showing,TypeShown),Call)).
+with_show_dmsg(TypeShown,Gaol):-
+  locally(set_prolog_flag(opt_debug,filter),
+     locally( tlbugger:dmsg_match(showing,TypeShown),Gaol)).
 
 % = :- meta_predicate(with_no_dmsg(0)).
 
 %= 	 	 
 
-%% with_no_dmsg( :GoalCall) is semidet.
+%% with_no_dmsg( :Goal) is nondet.
 %
 % Using No (debug)message.
 %
-with_no_dmsg(Call):- always_show_dmsg,!,Call.
-with_no_dmsg(Call):-w_tl(set_prolog_flag(opt_debug,false),Call).
+with_no_dmsg(Gaol):- always_show_dmsg,!,Gaol.
+with_no_dmsg(Gaol):-locally(set_prolog_flag(opt_debug,false),Gaol).
 
 %= 	 	 
 
-%% with_no_dmsg( ?TypeUnShown, :GoalCall) is semidet.
+%% with_no_dmsg( ?TypeUnShown, :Goal) is nondet.
 %
 % Using No (debug)message.
 %
-with_no_dmsg(TypeUnShown,Call):-w_tl(set_prolog_flag(opt_debug,filter),
-  w_tl( tlbugger:dmsg_match(hidden,TypeUnShown),Call)).
+with_no_dmsg(TypeUnShown,Gaol):-locally(set_prolog_flag(opt_debug,filter),
+  locally( tlbugger:dmsg_match(hidden,TypeUnShown),Gaol)).
 
 % dmsg_hides_message(_):- !,fail.
 
@@ -407,9 +408,15 @@ dmsg_text_to_string_safe(Expr,Forms):-on_x_fail(text_to_string(Expr,Forms)).
 % ===================================================================
 % Lowlevel printng
 % ===================================================================
-:- multifile term_to_message_string/2.
-:- dynamic term_to_message_string/2.
+:- multifile lmconf:term_to_message_string/2.
+:- dynamic lmconf:term_to_message_string/2.
+%% catchvvnt( :GoalT, ?E, :GoalF) is semidet.
+%
+% Catchvvnt.
+%
+catchvvnt(T,E,F):-catchv(no_trace(T),E,F).
 
+:- meta_predicate(catchvvnt(0,?,0)).
 
 %= 	 	 
 
@@ -436,7 +443,7 @@ fmt0(X,Y):-catchvvnt((format(X,Y),flush_output_safe),E,dfmt(E:format(X,Y))).
 % Format Primary Helper.
 %
 fmt0(X):- (atomic(X);is_list(X)), dmsg_text_to_string_safe(X,S),!,format('~w',[S]),!.
-fmt0(X):- (atom(X) -> catchvvnt((format(X,[]),flush_output_safe),E,dmsg(E)) ; (term_to_message_string(X,M) -> 'format'('~q~N',[M]);fmt_or_pp(X))).
+fmt0(X):- (atom(X) -> catchvvnt((format(X,[]),flush_output_safe),E,dmsg(E)) ; (lmconf:term_to_message_string(X,M) -> 'format'('~q~N',[M]);fmt_or_pp(X))).
 
 %= 	 	 
 
@@ -467,7 +474,7 @@ fmt(X,Y,Z):- fmt_ansi(fmt0(X,Y,Z)),!.
 :- module_transparent((format_to_message)/3).
 
 format_to_message(Format,Args,Info):- 
-  icatch(((( sanity(is_list(Args))-> 
+  on_xf_cont(((( sanity(is_list(Args))-> 
      format(string(Info),Format,Args);
      (format(string(Info),'~N~n~p +++++++++++++++++ ~p~n',[Format,Args])))))).
 
@@ -508,11 +515,11 @@ tst_fmt:- make,
 
 %= 	 	 
 
-%% fmt_ansi( :GoalCall) is semidet.
+%% fmt_ansi( :Goal) is nondet.
 %
 % Format Ansi.
 %
-fmt_ansi(Call):-ansicall([reset,bold,hfg(white),bg(black)],Call).
+fmt_ansi(Gaol):-ansicall([reset,bold,hfg(white),bg(black)],Gaol).
 
 
 %= 	 	 
@@ -584,11 +591,11 @@ with_output_to_stream(Stream,Goal):-
 
 %= 	 	 
 
-%% to_stderror( :GoalCall) is semidet.
+%% to_stderror( :Goal) is nondet.
 %
 % Converted To Stderror.
 %
-to_stderror(Call):- get_thread_current_error(Err), with_output_to_stream(Err,Call).
+to_stderror(Gaol):- get_thread_current_error(Err), with_output_to_stream(Err,Gaol).
 
 
 
@@ -667,7 +674,7 @@ loggerFmtReal(S,F,A):-
 % Using (debug)message.
 %
 with_dmsg(Functor,Goal):-
-   w_tl(tlbugger:is_with_dmsg(Functor),Goal).
+   locally(tlbugger:is_with_dmsg(Functor),Goal).
 
 
 :- use_module(library(listing)).
@@ -761,25 +768,25 @@ print_prepended_lines(Pre,[H|T]):-format('~N~w~w',[Pre,H]),print_prepended_lines
 
 %= 	 	 
 
-%% in_cmt( :GoalCall) is semidet.
+%% in_cmt( :Goal) is nondet.
 %
 % In Comment.
 %
 
-% in_cmt(Call):- tlbugger:no_slow_io,!,format('~N/*~n',[]),call_cleanup(Call,format('~N*/~n',[])).
-in_cmt(Call):- call_cleanup(prepend_each_line('% ',Call),format('~N',[])).
+% in_cmt(Gaol):- tlbugger:no_slow_io,!,format('~N/*~n',[]),call_cleanup(Gaol,format('~N*/~n',[])).
+in_cmt(Gaol):- call_cleanup(prepend_each_line('% ',Gaol),format('~N',[])).
 
 
 %= 	 	 
 
-%% with_current_indent( :GoalCall) is semidet.
+%% with_current_indent( :Goal) is nondet.
 %
 % Using Current Indent.
 %
-with_current_indent(Call):- 
+with_current_indent(Gaol):- 
    get_indent_level(Indent), 
    indent_to_spaces(Indent,Space),
-   prepend_each_line(Space,Call).
+   prepend_each_line(Space,Gaol).
 
 
 %= 	 	 
@@ -798,12 +805,12 @@ indent_to_spaces(N,Out):- N2 is N div 2, indent_to_spaces(N2,Spaces),atom_concat
 
 %= 	 	 
 
-%% prepend_each_line( ?Pre, :GoalCall) is semidet.
+%% prepend_each_line( ?Pre, :Goal) is nondet.
 %
 % Prepend Each Line.
 %
-prepend_each_line(Pre,Call):-
-  with_output_to_each(string(Str),Call)*->once(print_prepended(Pre,Str)).
+prepend_each_line(Pre,Gaol):-
+  with_output_to_each(string(Str),Gaol)*->once(print_prepended(Pre,Str)).
 
 :- meta_predicate if_color_debug(0).
 :- meta_predicate if_color_debug(0,0).
@@ -818,19 +825,19 @@ if_color_debug:-current_prolog_flag(dmsg_color,true).
 
 %= 	 	 
 
-%% if_color_debug( :GoalCall) is semidet.
+%% if_color_debug( :Goal) is nondet.
 %
 % If Color Debug.
 %
-if_color_debug(Call):- if_color_debug(Call, true).
+if_color_debug(Gaol):- if_color_debug(Gaol, true).
 
 %= 	 	 
 
-%% if_color_debug( :GoalCall, :GoalUnColor) is semidet.
+%% if_color_debug( :Goal, :GoalUnColor) is semidet.
 %
 % If Color Debug.
 %
-if_color_debug(Call,UnColor):- if_color_debug->Call;UnColor.
+if_color_debug(Gaol,UnColor):- if_color_debug->Gaol;UnColor.
 
 
 
@@ -846,6 +853,7 @@ if_color_debug(Call,UnColor):- if_color_debug->Call;UnColor.
 :- multifile(tlbugger:no_slow_io/0).
 %:- asserta(tlbugger:no_slow_io).
 
+:- set_prolog_flag(retry_undefined,true).
 
 if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 %= 	 	 
@@ -855,17 +863,18 @@ if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 % (debug)message.
 %
 dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(dmsg(C)))).
-dmsg(V):- w_tl(set_prolog_flag(retry_undefined,false), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
+dmsg(V):- locally(set_prolog_flag(retry_undefined,false), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
 %dmsg(F,A):- notrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
 
-system:dmsg(O):-logicmoo_util_dmsg:dmsg(O).
+:- system:import(dmsg/1).
+% system:dmsg(O):-logicmoo_util_dmsg:dmsg(O).
 %= 	 	 
 
 %% dmsg( ?F, ?A) is semidet.
 %
 % (debug)message.
 %
-dmsg(F,A):- w_tl(set_prolog_flag(retry_undefined, false),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
+dmsg(F,A):- locally(set_prolog_flag(retry_undefined, false),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
 
 
 
@@ -956,7 +965,7 @@ dmsg1(_):- \+ always_show_dmsg, is_hiding_dmsgs,!.
 dmsg1(V):- var(V),!,dmsg1(warn(dmsg_var(V))).
 dmsg1(NC):- cyclic_term(NC),!,dtrace,format_to_error('~N% ~q~n',[dmsg_cyclic_term_1]).
 dmsg1(NC):- tlbugger:skipDMsg,!,loop_check_early(dmsg2(NC),format_to_error('~N% ~q~n',[skipDMsg])),!.
-dmsg1(V):- w_tl(tlbugger:skipDMsg,((once(dmsg2(V)), ignore((tlbugger:dmsg_hook(V),fail))))),!.
+dmsg1(V):- locally(tlbugger:skipDMsg,((once(dmsg2(V)), ignore((tlbugger:dmsg_hook(V),fail))))),!.
 
 % = :- export(dmsg2/1).
 
@@ -1132,11 +1141,11 @@ colormsg(Ctrl,Msg):- ansicall(Ctrl,fmt0(Msg)).
 
 %= 	 	 
 
-%% ansicall( ?Ctrl, :GoalCall) is semidet.
+%% ansicall( ?Ctrl, :Goal) is nondet.
 %
 % Ansicall.
 %
-ansicall(Ctrl,Call):- notrace((current_output(Out), ansicall(Out,Ctrl,Call))).
+ansicall(Ctrl,Gaol):- notrace((current_output(Out), ansicall(Out,Ctrl,Gaol))).
 
 
 %= 	 	 
@@ -1166,52 +1175,52 @@ is_tty(Out):- not(tlbugger:no_colors), \+ tlbugger:no_slow_io, is_stream(Out),st
 
 %= 	 	 
 
-%% ansicall( ?Out, ?UPARAM2, :GoalCall) is semidet.
+%% ansicall( ?Out, ?UPARAM2, :Goal) is nondet.
 %
 % Ansicall.
 %
-ansicall(Out,_,Call):- \+ is_tty(Out),!,Call.
-ansicall(_Out,_,Call):- tlbugger:skipDumpST9,!,Call.
+ansicall(Out,_,Gaol):- \+ is_tty(Out),!,Gaol.
+ansicall(_Out,_,Gaol):- tlbugger:skipDumpST9,!,Gaol.
 
 % in_pengines:- if_defined_local(relative_frame(source_context_module,pengines,_)).
 
-ansicall(_,_,Call):-tlbugger:no_slow_io,!,Call.
-ansicall(Out,CtrlIn,Call):- once(ansi_control_conv(CtrlIn,Ctrl)),  CtrlIn\=Ctrl,!,ansicall(Out,Ctrl,Call).
-ansicall(_,_,Call):- if_defined_local(in_pengines,fail),!,Call.
-ansicall(Out,Ctrl,Call):-
-   retractall(tlbugger:last_used_color(_)),asserta(tlbugger:last_used_color(Ctrl)),ansicall0(Out,Ctrl,Call),!.
+ansicall(_,_,Gaol):-tlbugger:no_slow_io,!,Gaol.
+ansicall(Out,CtrlIn,Gaol):- once(ansi_control_conv(CtrlIn,Ctrl)),  CtrlIn\=Ctrl,!,ansicall(Out,Ctrl,Gaol).
+ansicall(_,_,Gaol):- if_defined_local(in_pengines,fail),!,Gaol.
+ansicall(Out,Ctrl,Gaol):-
+   retractall(tlbugger:last_used_color(_)),asserta(tlbugger:last_used_color(Ctrl)),ansicall0(Out,Ctrl,Gaol),!.
 
 
 %= 	 	 
 
-%% ansicall0( ?Out, ?Ctrl, :GoalCall) is semidet.
+%% ansicall0( ?Out, ?Ctrl, :Goal) is nondet.
 %
 % Ansicall Primary Helper.
 %
-ansicall0(Out,[Ctrl|Set],Call):-!, ansicall0(Out,Ctrl,ansicall0(Out,Set,Call)).
-ansicall0(_,[],Call):-!,Call.
-ansicall0(Out,Ctrl,Call):-if_color_debug(ansicall1(Out,Ctrl,Call),keep_line_pos_w_w(Out, Call)).
+ansicall0(Out,[Ctrl|Set],Gaol):-!, ansicall0(Out,Ctrl,ansicall0(Out,Set,Gaol)).
+ansicall0(_,[],Gaol):-!,Gaol.
+ansicall0(Out,Ctrl,Gaol):-if_color_debug(ansicall1(Out,Ctrl,Gaol),keep_line_pos_w_w(Out, Gaol)).
 
 
 %= 	 	 
 
-%% ansicall1( ?Out, ?Ctrl, :GoalCall) is semidet.
+%% ansicall1( ?Out, ?Ctrl, :Goal) is nondet.
 %
 % Ansicall Secondary Helper.
 %
-ansicall1(Out,Ctrl,Call):-
+ansicall1(Out,Ctrl,Gaol):-
    notrace((must(sgr_code_on_off(Ctrl, OnCode, OffCode)),!,
      keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OnCode]))),
-	call_cleanup(Call,
+	call_cleanup(Gaol,
            keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OffCode])))))).
 /*
-ansicall(S,Set,Call):-
+ansicall(S,Set,Gaol):-
      call_cleanup((
          stream_property(S, tty(true)), current_prolog_flag(color_term, true), !,
 	(is_list(Ctrl) ->  maplist(sgr_code_on_off, Ctrl, Codes, OffCodes),
           atomic_list_concat(Codes, (';'), OnCode) atomic_list_concat(OffCodes, (';'), OffCode) ;   sgr_code_on_off(Ctrl, OnCode, OffCode)),
         keep_line_pos_w_w(S, (format(S,'\e[~wm', [OnCode])))),
-	call_cleanup(Call,keep_line_pos_w_w(S, (format(S, '\e[~wm', [OffCode]))))).
+	call_cleanup(Gaol,keep_line_pos_w_w(S, (format(S, '\e[~wm', [OffCode]))))).
 
 
 */
@@ -1421,7 +1430,7 @@ random_color([reset,M,FG,BG,font(Font)]):-Font is random(8),
 %
 % Tst Color.
 %
-tst_color:- make, ignore((( between(1,20,_),random_member(Call,[colormsg(C,cm(C)),dmsg(color(C,dm(C))),ansifmt(C,C)]),next_color(C),Call,fail))).
+tst_color:- make, ignore((( between(1,20,_),random_member(Gaol,[colormsg(C,cm(C)),dmsg(color(C,dm(C))),ansifmt(C,C)]),next_color(C),Gaol,fail))).
 % = :- export(tst_color/1).
 
 %= 	 	 
