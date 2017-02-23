@@ -10,7 +10,7 @@
     Maintainers:   TeamSPoon
     E-mail:        logicmoo@gmail.com
     WWW:           http://www.prologmoo.com
-    SCM:           https://github.com/TeamSPoon/pack_PrologMUD/tree/master/pack/logicmoo_base
+    SCM:           https://github.com/TeamSPoon/PrologMUD/tree/master/pack/logicmoo_base
     Copyleft:      1999-2015, LogicMOO Prolog Extensions
     License:       Lesser GNU Public License
 % ===================================================================
