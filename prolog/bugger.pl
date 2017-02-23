@@ -445,7 +445,7 @@
 
 % :- use_module('logicmoo_util_rtrace').
 :- set_module(class(library)).
-:- include('logicmoo_util_header.pi').
+
 
 
 %% all_source_file_predicates_are_transparent() is det.

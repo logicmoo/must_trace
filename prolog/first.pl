@@ -317,7 +317,7 @@ mpred_trace_all(W) :- forall(match_predicates(W,M,Pred,_,A),(
 %:-mpred_trace_all(system:_).
 
 :- set_module(class(library)).
-:- include('logicmoo_util_header.pi').
+
 
 :- thread_local(tlbugger:ifHideTrace/0).
 :- export(tlbugger:ifHideTrace/0).

@@ -329,7 +329,7 @@ end_of_file.
       rtrace/0,      
       push_guitracer/0.
 
-% :- include('logicmoo_util_header.pi').
+% 
 
 
 

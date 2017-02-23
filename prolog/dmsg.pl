@@ -229,7 +229,7 @@ dmsg000/1,
        ]).
 
 :- else.
-:- include('logicmoo_util_header.pi').
+
 :- endif.
 
 :- set_module(class(library)).

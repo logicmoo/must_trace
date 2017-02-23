@@ -304,7 +304,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
    quietly_must(0).
 
 :- set_module(class(library)).
-:- include('logicmoo_util_header.pi').
+
 
 /** <module> logicmoo_util_catch - catch-like bocks
 
