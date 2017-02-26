@@ -414,7 +414,7 @@ dmsg_text_to_string_safe(Expr,Forms):-on_x_fail(text_to_string(Expr,Forms)).
 %
 % Catchvvnt.
 %
-catchvvnt(T,E,F):-catchv(no_trace(T),E,F).
+catchvvnt(T,E,F):-catchv(quietly(T),E,F).
 
 :- meta_predicate(catchvvnt(0,?,0)).
 
@@ -578,7 +578,7 @@ dfmt(X,Y):- get_thread_current_error(Err), with_output_to_stream(Err,fmt(X,Y)).
 
 %= 	 	 
 
-%% with_output_to_stream( ?Stream, :GoalGoal) is semidet.
+%% with_output_to_stream( ?Stream, :Goal) is semidet.
 %
 % Using Output Converted To Stream.
 %
@@ -669,7 +669,7 @@ loggerFmtReal(S,F,A):-
 
 %= 	 	 
 
-%% with_dmsg( ?Functor, :GoalGoal) is semidet.
+%% with_dmsg( ?Functor, :Goal) is semidet.
 %
 % Using (debug)message.
 %
@@ -1622,3 +1622,11 @@ cls:- shell(cls).
 :- 'mpred_trace_none'(dmsg(_,_)).
 :- 'mpred_trace_none'(portray_clause_w_vars(_)).
 */
+
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
+
+ 

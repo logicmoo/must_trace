@@ -491,8 +491,8 @@ dtrace(G):- strip_module(G,_,dbreak),\+ thread_self_main,!.
 %   scce_orig(notrace,restore_trace((leash(+all),dumptrace_or_cont(G))),trace).
 
 dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;catch(dumptrace1(G),E,handle_dumptrace_signal(G,E)). %always fails
-%dtrace(G):- \+ tlbugger:ifCanTrace,!,no_trace((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
-%dtrace(G):- \+ tlbugger:ifCanTrace,!,no_trace((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
+%dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
+%dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
 %dtrace(G):- % dumptrace_or_cont(G).
 %    catch(dumptrace1(G),E,handle_dumptrace_signal(G,E)).
 
@@ -579,10 +579,10 @@ dumptrace(_,0'd):-!,prolog_stack:backtrace(800),!,fail.
 
 dumptrace(G,0'l):-!, 
   restore_trace(( notrace(ggtrace),G)),!,notrace.
-%dumptrace(G,0's):-!,no_trace(ggtrace),!,(no_trace(G)*->true;true).
+%dumptrace(G,0's):-!,quietly(ggtrace),!,(quietly(G)*->true;true).
 dumptrace(G,0'S):-!, wdmsg(skipping(G)),!.
 dumptrace(_,0'c):-!, throw(continue).
-%dumptrace(G,0'i):-!,no_trace(ggtrace),!,ignore(G).
+%dumptrace(G,0'i):-!,quietly(ggtrace),!,ignore(G).
 dumptrace(_,0'b):-!,debug,break,!,fail.
 dumptrace(_,0'a):-!,abort,!,fail.
 dumptrace(_,0'x):-!,must((lex,ex)),!,fail.
@@ -647,7 +647,7 @@ user:message_hook(Term, Kind, Lines):-
  Term\=syntax_error(_), 
  backtrace(40), \+ baseKB:no_buggery, \+ tlbugger:no_buggery_tl,
  stop_rtrace,trace,
-  dmsg(message_hook(Term, Kind, Lines)),no_trace(dumpST(10)),dmsg(message_hook(Term, Kind, Lines)),
+  dmsg(message_hook(Term, Kind, Lines)),quietly(dumpST(10)),dmsg(message_hook(Term, Kind, Lines)),
    !,fail,
    (sleep(1.0),read_pending_codes(user_input, Chars, []), format(error_error, '~s', [Chars]),flush_output(error_error),!,Chars=[C],
                 dtrace(true,C),!),

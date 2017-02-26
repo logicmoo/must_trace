@@ -5,7 +5,7 @@ Some better parts of that library are not yet added.
 
 Here are current uses:
 
-Wrap `no_trace/1` over parts of your code you no longer need to stepped thru.
+Wrap `quietly/1` over parts of your code you no longer need to stepped thru.
 This is a *nondeterministic* version of notrace/1!
 
 

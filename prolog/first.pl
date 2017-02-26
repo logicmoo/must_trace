@@ -232,7 +232,7 @@ if_may_hide(G):-G.
 
 %= 	 	 
 
-%% with_unlocked_pred( ?Pred, :GoalGoal) is semidet.
+%% with_unlocked_pred( ?Pred, :Goal) is semidet.
 %
 % Using Unlocked Predicate.
 %
@@ -1000,4 +1000,12 @@ quiet_all_module_predicates_are_transparent(ModuleName):-
 :- dynamic(user:term_expansion/2).
 :- module_transparent(user:term_expansion/2).
 % user:term_expansion( (:-export(FA) ),(:- export_if_noconflict(M,FA))):-  current_prolog_flag(lm_expanders,true),prolog_load_context(module,M).
+
+
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
+
  

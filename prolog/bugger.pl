@@ -677,14 +677,14 @@ test_for_release_problems(_):-!.
 test_for_release_problems(File):-  
       dmsg("~N~nListing problems after ~q...~n",[File]),
       list_undefined,
-      nop(at_start(if_defined(gxref,true))),!.
+      nop(after_boot(if_defined(gxref,true))),!.
 
 %= :- meta_predicate  if_interactive(0).
 
 
 
 
-%% if_interactive( :GoalGoal) is semidet.
+%% if_interactive( :Goal) is semidet.
 %
 % If Interactive.
 %
@@ -692,7 +692,7 @@ if_interactive(Goal):-ignore(if_interactive0(Goal)),!.
 
 
 
-%% if_interactive0( :GoalGoal) is semidet.
+%% if_interactive0( :Goal) is semidet.
 %
 % If Interactive Primary Helper.
 %
@@ -816,8 +816,8 @@ bad_idea:- current_prolog_flag(bad_idea,true).
 %
 % Wdmsg.
 %
-wdmsg(X):- no_trace(show_source_location),
-   no_trace(with_all_dmsg(dmsg(X))),!.
+wdmsg(X):- quietly(show_source_location),
+   quietly(with_all_dmsg(dmsg(X))),!.
 
 
 
@@ -825,19 +825,19 @@ wdmsg(X):- no_trace(show_source_location),
 %
 % Wdmsg.
 %
-wdmsg(F,X):- no_trace(ignore(with_all_dmsg(dmsg(F,X)))),!.
+wdmsg(F,X):- quietly(ignore(with_all_dmsg(dmsg(F,X)))),!.
 
 
 %% wdmsg( ?F, ?X) is semidet.
 %
 % Wdmsg.
 %
-wdmsg(W,F,X):- no_trace(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
+wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 
 
 
 
-%% prolog_call( :GoalCall) is semidet.
+%% prolog_call( :Goal) is semidet.
 %
 % Prolog Call.
 %
@@ -889,7 +889,7 @@ bugger_t_expansion(_,T,T):-not(compound(T)),!.
 bugger_t_expansion(_,prolog_call(T),T):-!.
 bugger_t_expansion(_,dynamic(T),dynamic(T)):-!.
 bugger_t_expansion(_,format(F,A),format_safe(F,A)):-!.
-bugger_t_expansion(CM,notrace(T),no_trace(TT)):-!,bugger_t_expansion(CM,(T),(TT)).
+bugger_t_expansion(CM,notrace(T),quietly(TT)):-!,bugger_t_expansion(CM,(T),(TT)).
 bugger_t_expansion(_,F/A,F/A):-!.
 bugger_t_expansion(_,M:F/A,M:F/A):-!.
 bugger_t_expansion(CM,[F0|ARGS0],[F1|ARGS1]):- !,bugger_t_expansion(CM,F0,F1),bugger_t_expansion(CM,ARGS0,ARGS1).
@@ -902,7 +902,7 @@ bugger_t_expansion(CM,M:T,M:TT):-!,bugger_t_expansion(CM,T,TT),!.
 bugger_t_expansion(_,test_is(A),test_is_safe(A)):-!.
 bugger_t_expansion(_,delete(A,B,C),delete(A,B,C)):-!.
 bugger_t_expansion(CM,T,TT):-  
-     compound_name_arguments(T,F,A),no_trace((bugger_t_expansion(CM,A,AA),
+     compound_name_arguments(T,F,A),quietly((bugger_t_expansion(CM,A,AA),
      functor_h0(T,FH,AH))),
     ( (fail,bugger_atom_change(CM,T,F,FH,AH,FF))-> true; FF=F ),
     compound_name_arguments(TT,FF,AA),!,
@@ -953,8 +953,8 @@ differnt_modules(User2,User1):- User1 \== User2.
 
 
 :- dynamic(unwrap_for_debug/1).
-% unwrap_for_debug(F):-member(F,[notrace,no_trace]).
-% unwrap_for_debug(F):-member(F,[traceok,must,must_det,no_trace]).
+% unwrap_for_debug(F):-member(F,[notrace,quietly]).
+% unwrap_for_debug(F):-member(F,[traceok,must,must_det,quietly]).
 %unwrap_for_debug(F):-member(F,['on_x_debug',on_x_debug]),!,fail.
 %unwrap_for_debug(F):-member(FF,['OnError','OnFailure','LeastOne','Ignore','must']),atom_concat(_,FF,F),!.
 
@@ -1035,7 +1035,7 @@ bugger_term_expansion(CM,T,T3):- once(bugger_t_expansion(CM,T,T2)),T\==T2,!,nop(
 
 
 :- export(traceok/1).
-%=  = %= :- meta_predicate (no_trace(0)).
+%=  = %= :- meta_predicate (quietly(0)).
 % = %= :- meta_predicate (traceok(0)).
 
 
@@ -1085,7 +1085,7 @@ nodebugx(X):-
  locally(-tlbugger:ifCanTrace,
    locally(tlbugger:ifWontTrace,
     locally(tlbugger:show_must_go_on,
-       locally(tlbugger:ifHideTrace,no_trace(X))))).
+       locally(tlbugger:ifHideTrace,quietly(X))))).
 
 debugging_logicmoo(Mask):- logicmoo_topic(Mask,Topic),prolog_debug:debugging(Topic, TF, _),!,TF=true.
 
@@ -1173,7 +1173,7 @@ meta_interp_signal(_:meta_callable(_,_)).
 %
 % Meta Interp.
 %
-meta_interp(CE,A):- no_trace((var(A); \+ if_defined(stack_check,fail))),!, throw(meta_interp(CE,A)).
+meta_interp(CE,A):- quietly((var(A); \+ if_defined(stack_check,fail))),!, throw(meta_interp(CE,A)).
 meta_interp(_CE,A):- maybe_leash(+all),meta_interp_signal(A),!,fail.
 meta_interp(CE,M:X):- atom(M),!,meta_interp(CE,X).
 meta_interp(_,true):-!.
@@ -1203,7 +1203,7 @@ meta_interp(CE,A):- show_call(why,call(CE,meta_call(A))).
 
 
 
-%% once_if_ground( :GoalCall) is semidet.
+%% once_if_ground( :Goal) is semidet.
 %
 % Once If Ground.
 %
@@ -1214,7 +1214,7 @@ once_if_ground(Call):- once(Call).
 
 
 
-%% once_if_ground( :GoalCall, -T) is semidet.
+%% once_if_ground( :Goal, -T) is semidet.
 %
 % Once If Ground.
 %
@@ -1294,7 +1294,7 @@ traceok(X):-  tlbugger:wastracing -> call_cleanup((dtrace,call(X)),notrace) ; ca
 
 
 
-%% show_entry( +Why, :GoalCall) is semidet.
+%% show_entry( +Why, :Goal) is semidet.
 %
 % Show Entry.
 %
@@ -1302,7 +1302,7 @@ show_entry(Why,Call):-debugm(Why,show_entry(Call)),show_call(Why,Call).
 
 
 
-%% show_entry( :GoalCall) is semidet.
+%% show_entry( :Goal) is semidet.
 %
 % Show Entry.
 %
@@ -1312,7 +1312,7 @@ show_entry(Call):-show_entry(mpred,Call).
 
 
 
-%% dcall0( :GoalGoal) is semidet.
+%% dcall0( :Goal) is semidet.
 %
 % Dirrectly Call Primary Helper.
 %
@@ -1322,7 +1322,7 @@ dcall0(Goal):- Goal. % on_x_debug(Goal). % dmsg(show_call(why,Goal)),Goal.
 
 
 
-%% show_call( +Why, :GoalGoal) is semidet.
+%% show_call( +Why, :Goal) is semidet.
 %
 % Show Call.
 %
@@ -1339,7 +1339,7 @@ show_call(Goal):- strip_module(Goal,Why,_),show_call(Why,Goal).
 
 
 
-%% show_failure( +Why, :GoalGoal) is semidet.
+%% show_failure( +Why, :Goal) is semidet.
 %
 % Show Failure.
 %
@@ -1347,14 +1347,14 @@ show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm(Why,sc_failed(Why,Goal)),!
 
 
 
-%% show_failure( :GoalGoal) is semidet.
+%% show_failure( :Goal) is semidet.
 %
 % Show Failure.
 %
 show_failure(Goal):- show_failure(mpred,Goal).
 
 
-%% show_success( +Why, :GoalGoal) is semidet.
+%% show_success( +Why, :Goal) is semidet.
 %
 % Show Success.
 %
@@ -1362,7 +1362,7 @@ show_success(Why,Goal):- dcall0(Goal),debugm(Why,sc_success(Why,Goal)).
 
 
 
-%% show_success( :GoalGoal) is semidet.
+%% show_success( :Goal) is semidet.
 %
 % Show Success.
 %
@@ -1373,7 +1373,7 @@ show_success(Goal):- show_success(mpred,Goal).
 
 
 
-%% on_f_log_fail( :GoalGoal) is semidet.
+%% on_f_log_fail( :Goal) is semidet.
 %
 % Whenever Functor Log Fail.
 %
@@ -1546,7 +1546,7 @@ willTrace:-tlbugger:ifCanTrace.
 % hide  Trace.
 %
 hideTrace:-
-  hideTrace([no_trace/1], -all),
+  hideTrace([quietly/1], -all),
   % hideTrace(computeInnerEach/4, -all),
 
   hideTrace(
@@ -1849,7 +1849,7 @@ traceAll:-!.
 
 
 
-%% forall_member( ?C, ?C1, :GoalCall) is semidet.
+%% forall_member( ?C, ?C1, :Goal) is semidet.
 %
 % Forall Member.
 %
@@ -1859,7 +1859,7 @@ forall_member(C,C1,Call):-forall(member(C,C1),once(Call)).
 
 
 
-%% prolog_must( :GoalCall) is semidet.
+%% prolog_must( :Goal) is semidet.
 %
 % Prolog Must Be Successfull.
 %
@@ -1870,7 +1870,7 @@ prolog_must(Call):-must(Call).
 
 
 
-%% gmust( :GoalTrue, :GoalCall) is semidet.
+%% gmust( :GoalTrue, :Goal) is semidet.
 %
 % Gmust.
 %
@@ -1881,7 +1881,7 @@ gmust(True,Call):-catchv((Call,(True->true;throw(retry(gmust(True,Call))))),retr
 
 
 
-%% on_f_throw( :GoalCall) is semidet.
+%% on_f_throw( :Goal) is semidet.
 %
 % Whenever Functor Throw.
 %
@@ -1895,16 +1895,16 @@ on_f_throw(Call):-one_must(Call,throw(on_f_throw(Call))).
 %
 on_x_cont(CX):-ignore(catchv(CX,_,true)).
 
-% pause_trace(_):- no_trace(((debug,visible(+all),maybe_leash(+exception),maybe_leash(+call)))),dtrace.
+% pause_trace(_):- quietly(((debug,visible(+all),maybe_leash(+exception),maybe_leash(+call)))),dtrace.
 
-%debugCall(Goal):-no_trace,dmsg(debugCall(Goal)),dumpST, pause_trace(errored(Goal)),ggtrace,Goal.
-%debugCallF(Goal):-no_trace,dmsg(debugCallF(Goal)),dumpST, pause_trace(failed(Goal)),gftrace,Goal.
-
-
+%debugCall(Goal):-quietly,dmsg(debugCall(Goal)),dumpST, pause_trace(errored(Goal)),ggtrace,Goal.
+%debugCallF(Goal):-quietly,dmsg(debugCallF(Goal)),dumpST, pause_trace(failed(Goal)),gftrace,Goal.
 
 
 
-%% with_skip_bugger( :GoalGoal) is semidet.
+
+
+%% with_skip_bugger( :Goal) is semidet.
 %
 % Using Skip Logic Moo Debugger.
 %
@@ -1913,7 +1913,7 @@ with_skip_bugger(Goal):-setup_call_cleanup(asserta( tlbugger:skip_bugger,Ref),Go
 
 
 
-%% on_x_rtraceEach( :GoalGoal) is semidet.
+%% on_x_rtraceEach( :Goal) is semidet.
 %
 % If there If Is A an exception in  :Goal goal then r Trace each.
 %
@@ -1921,7 +1921,7 @@ on_x_rtraceEach(Goal):-with_each(1,on_x_debug,Goal).
 
 
 
-%% on_x_debug_cont( :GoalGoal) is semidet.
+%% on_x_debug_cont( :Goal) is semidet.
 %
 % If there If Is A an exception in  :Goal goal then debug cont.
 %
@@ -1938,7 +1938,7 @@ with_each(WrapperGoal):- WrapperGoal=..[Wrapper,Goal],with_each(Wrapper,Goal).
 
 
 
-%% with_each( ?Wrapper, :GoalGoal) is semidet.
+%% with_each( ?Wrapper, :Goal) is semidet.
 %
 % Using Each.
 %
@@ -1948,7 +1948,7 @@ with_each(Wrapper,Goal):-with_each(1,Wrapper,Goal).
 
 
 
-%% on_f_debug( :GoalGoal) is semidet.
+%% on_f_debug( :Goal) is semidet.
 %
 % Whenever Functor Debug.
 %
@@ -1963,7 +1963,7 @@ on_f_debug(Goal):-  Goal *-> true; ((nortrace,notrace,debugCallWhy(failed(on_f_d
 debugCallWhy(Why, C):- wdmsg(Why),catch(dtrace(C),E,wdmsg(cont_X_debugCallWhy(E,Why, C))).
 
 
-%% debugOnFailureEach( :GoalGoal) is semidet.
+%% debugOnFailureEach( :Goal) is semidet.
 %
 % Debug Whenever Failure Each.
 %
@@ -1971,7 +1971,7 @@ debugOnFailureEach(Goal):-with_each(1,on_f_debug,Goal).
 
 
 
-%% on_f_debug_ignore( :GoalGoal) is semidet.
+%% on_f_debug_ignore( :Goal) is semidet.
 %
 % Whenever Functor Debug Ignore.
 %
@@ -1982,7 +1982,7 @@ logOnFailure(Goal):-on_f_log_fail(Goal).
 
 
 
-%% logOnFailure0( :GoalGoal) is semidet.
+%% logOnFailure0( :Goal) is semidet.
 %
 % Log Whenever Failure Primary Helper.
 %
@@ -1990,7 +1990,7 @@ logOnFailure0(Goal):- one_must(Goal,(dmsg(on_f_log_fail(Goal)),fail)).
 
 
 
-%% logOnFailureEach( :GoalGoal) is semidet.
+%% logOnFailureEach( :Goal) is semidet.
 %
 % Log Whenever Failure Each.
 %
@@ -1998,7 +1998,7 @@ logOnFailureEach(Goal):-with_each(1,on_f_log_fail,Goal).
 
 
 
-%% on_f_log_ignore( :GoalGoal) is semidet.
+%% on_f_log_ignore( :Goal) is semidet.
 %
 % Whenever Functor Log Ignore.
 %
@@ -2029,7 +2029,7 @@ beenCaught(Goal):- traceAll,dmsg(tracing(Goal)),debug,dtrace,Goal.
 
 
 
-%% with_no_term_expansions( :GoalCall) is semidet.
+%% with_no_term_expansions( :Goal) is semidet.
 %
 % Using No Term Expansions.
 %
@@ -2075,7 +2075,7 @@ local_predicate(P,F/N):-functor_safe(P,F,N),!,fail.
 %
 % Atom Contains666.
 %
-atom_contains666(F,C):- no_trace((atom(F),atom(C),sub_atom(F,_,_,_,C))).
+atom_contains666(F,C):- quietly((atom(F),atom(C),sub_atom(F,_,_,_,C))).
 
 % = %= :- meta_predicate (real_builtin_predicate(0)).
 
@@ -2101,7 +2101,7 @@ real_builtin_predicate(G):-    \+ predicate_property(G,dynamic),
 
 
 
-%% will_debug_else_throw( :GoalE, :GoalGoal) is semidet.
+%% will_debug_else_throw( :GoalE, :Goal) is semidet.
 %
 % Will Debug Else Throw.
 %
@@ -2187,7 +2187,7 @@ bin_ecall(F,A,asis,true):-member(F/A,[('must')/1]).
 
 
 
-%% with_each( ?UPARAM1, :PRED1VALUE2, :GoalCall) is semidet.
+%% with_each( ?UPARAM1, :PRED1VALUE2, :Goal) is semidet.
 %
 % Using Each.
 %
@@ -2208,7 +2208,7 @@ with_each(BDepth,Wrapper,Call):-functor_safe(Call,F,A),prolog_ecall_fa(BDepth,Wr
 
 
 
-%% prolog_ecall_fa( ?UPARAM1, :PRED1VALUE2, ?F, ?A, :GoalCall) is semidet.
+%% prolog_ecall_fa( ?UPARAM1, :PRED1VALUE2, ?F, ?A, :Goal) is semidet.
 %
 % Prolog Ecall Functor-arity.
 %
@@ -2381,7 +2381,7 @@ randomVars(Term):- random(R), StartR is round('*'(R,1000000)), !,
 
 
 
-%% prolog_must_not( :GoalCall) is semidet.
+%% prolog_must_not( :Goal) is semidet.
 %
 % Prolog Must Be Successfull Not.
 %
@@ -2441,7 +2441,7 @@ if_prolog(_,_):-!. % Dont run SWI Specificd or others
 
 
 
-%% time_call( :GoalCall) is semidet.
+%% time_call( :Goal) is semidet.
 %
 % Time Call.
 %
@@ -2464,13 +2464,14 @@ time_call(Call):-
 % Gripe Time.
 %
 
-gripe_time(_TooLong,Goal):- nop(flag_call(runtime_speed>runtime_debug)),!,Goal.
+gripe_time(_TooLong,Goal):- \+ current_prolog_flag(runtime_debug,3),\+ current_prolog_flag(runtime_debug,2),!,Goal.
 gripe_time(TooLong,Goal):- statistics(cputime,StartCPU),
+  My_StartCPU = start(StartCPU),
   statistics(walltime,[StartWALL,_]),
-  NeedGripe=v(yes),
+  NeedGripe=v(yes),!,
   (Goal*->Success=true;Success=fail),
   once((statistics(walltime,[EndWALL,_]),statistics(cputime,EndCPU),
-     ElapseCPU is EndCPU-StartCPU,
+     (arg(1,My_StartCPU,StartCPU), ElapseCPU is EndCPU-StartCPU,nb_setarg(1,My_StartCPU,EndCPU)),
      ((ground(NeedGripe),ElapseCPU>TooLong,nb_setarg(1,NeedGripe,_))
         -> (wdmsg(gripe_CPUTIME(warn(ElapseCPU>TooLong),Goal)))
         ; (ElapseWALL is (EndWALL-StartWALL)/1000,
@@ -2692,7 +2693,7 @@ writeFileToStream(Dest,Filename):-
 %
 % Debug Format List.
 %
-debugFmtList(ListI):-no_trace((copy_term(ListI,List),debugFmtList0(List,List0),randomVars(List0),dmsg(List0))),!.
+debugFmtList(ListI):-quietly((copy_term(ListI,List),debugFmtList0(List,List0),randomVars(List0),dmsg(List0))),!.
 
 
 
@@ -2745,7 +2746,7 @@ listify(OUT,[OUT]).
 
 
 
-%% traceIf( :GoalCall) is semidet.
+%% traceIf( :Goal) is semidet.
 %
 %  Trace if.
 %
@@ -2913,7 +2914,7 @@ nth_frame(Nth, Key, Value):- prolog_current_frame(Frame), nth_frame_attribute(Nt
 % Nth Frame Attribute.
 %
 nth_frame_attribute(Nth,NthIn, Frame, Key, Value):-  
- no_trace((
+ quietly((
    (NthIn>=0,Nth=NthIn,prolog_frame_attribute(Frame, Key, Value));
    ((prolog_frame_attribute(Frame, parent, ParentFrame),
      NthNext is NthIn + 1, nth_frame_attribute(Nth,NthNext, ParentFrame, Key, Value))))).
@@ -3036,7 +3037,7 @@ disabled_this:- asserta((user:prolog_exception_hook(Exception, Exception, Frame,
 % :- '$hide'('$syspreds':leash/1).
 % :- '$hide'(visible/1).
 % :- '$hide'(notrace/0).
-% :- '$hide'(no_trace/1).
+% :- '$hide'(quietly/1).
 % :- '$hide'(dtrace/0).
 % :-'$set_predicate_attribute'(!, trace, 1).
 
@@ -3083,6 +3084,14 @@ must_det(Level,Goal) :- Goal,
 
 % 
 
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
+
+ 
+ 
 :- export(logicmoo_bugger_loaded/0).
 
 

@@ -31,14 +31,6 @@
 
 :- set_module(class(library)).
 
-:- reexport(library('first')).
-:- reexport(library('ucatch')).
-:- reexport(library('dmsg')).
-:- reexport(library('rtrace')).
-:- reexport(library('bugger')).
-:- reexport(library('dumpst')).
-:- reexport(library('frames')).
-
 :- use_module(library(debug)).
 
 % TODO Make a speed,safety,debug Triangle instead of these flags
@@ -128,10 +120,11 @@ scce_orig(Setup,Goal,Cleanup):-
           ; (true;('$sig_atomic'(Setup),fail)))), 
       E, 
       ('$sig_atomic'(Cleanup),throw(E))). 
-*/
 
 :- abolish(system:scce_orig,3).
-system:scce_orig(Setup,Goal,Cleanup):-
+*/
+
+scce_orig(Setup,Goal,Cleanup):-
    \+ \+ '$sig_atomic'(Setup), 
    catch( 
      ((Goal, deterministic(DET)),
@@ -142,5 +135,21 @@ system:scce_orig(Setup,Goal,Cleanup):-
       ('$sig_atomic'(Cleanup),throw(E))). 
 
 
+:- ensure_loaded(library('first')).
+:- ensure_loaded(library('ucatch')).
+:- ensure_loaded(library('dmsg')).
+:- ensure_loaded(library('rtrace')).
+:- ensure_loaded(library('bugger')).
+:- ensure_loaded(library('dumpst')).
+:- ensure_loaded(library('frames')).
 
+
+
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
+
+ 
 
