@@ -563,7 +563,7 @@ set_bugger_flag(F,V):-create_prolog_flag(F,V,[keep(true),tCol(ftTerm)]),!.
 %
 % If there If Is an exception in :Goal just fail
 %
-on_x_fail(Goal):- catchv(Goal,_,fail).
+on_x_fail(Goal):- notrace(catchv(Goal,_,fail)).
 
 
 :- meta_predicate(call_count(0,?)).
@@ -2465,6 +2465,7 @@ time_call(Call):-
 %
 
 gripe_time(_TooLong,Goal):- \+ current_prolog_flag(runtime_debug,3),\+ current_prolog_flag(runtime_debug,2),!,Goal.
+gripe_time(_TooLong,Goal):- !,Goal.
 gripe_time(TooLong,Goal):- statistics(cputime,StartCPU),
   My_StartCPU = start(StartCPU),
   statistics(walltime,[StartWALL,_]),

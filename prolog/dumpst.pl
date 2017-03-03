@@ -585,7 +585,7 @@ dumptrace(_,0'c):-!, throw(continue).
 %dumptrace(G,0'i):-!,quietly(ggtrace),!,ignore(G).
 dumptrace(_,0'b):-!,debug,break,!,fail.
 dumptrace(_,0'a):-!,abort,!,fail.
-dumptrace(_,0'x):-!,must((lex,ex)),!,fail.
+% dumptrace(_,0'x):-!,must(lex),!,fail.
 dumptrace(_,0'e):-!,halt(1),!.
 dumptrace(_,0'm):-!,make,fail.
 dumptrace(G,0'L):-!,xlisting(G),!,fail.

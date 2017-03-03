@@ -276,6 +276,7 @@ with_output_to_each(Output,Goal):-
 % = :- meta_predicate(with_show_dmsg(*,0)).
 
 
+:- thread_local(tlbugger:tl_always_show_dmsg/0).
 
 %= 	 	 
 
@@ -1113,8 +1114,10 @@ debugm(X):-notrace((debugm(X,X))).
 %
 % Debugm.
 %
+debugm(Why,Msg):- wdmsg(debugm(Why,Msg)),!.
 debugm(Why,Msg):- notrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
 debugm(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
+
 
 
 % = :- export(colormsg/2).

@@ -278,19 +278,6 @@ ftrace(Goal):- restore_trace((
   ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
   ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
 
- 
-
-
-system:goal_expansion(_,_):- t_l:rtracing,\+tracing,trace,fail.
-system:term_expansion(_,_):- t_l:rtracing,\+tracing,trace,fail.
-
-
-
-
-
-
-
-
 
 end_of_file.
 end_of_file.

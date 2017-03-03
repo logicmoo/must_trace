@@ -197,7 +197,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 		on_x_log_fail(0),
 
 
-        must(0),
+        % must(0),
         must3(+,+,0),
         must_find_and_call(0),
         must_det_u(0),
@@ -213,7 +213,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         one_must(0, 0),
         one_must_det(0, 0),
         unsafe_safe(0,0),
-        sanity(0),
+        % sanity(0),
         sanity3(+,+,0),
         slow_sanity(0),
         to_pi(?, ?),
@@ -1623,9 +1623,8 @@ y_must(Y,Goal):- catchv(Goal,E,(wdmsg(E:must_xI__xI__xI__xI__xI_(Y,Goal)),fail))
 
 % -- CODEBLOCK
 % :- export(must/1).
-:- meta_predicate (must(0)).
-
-:- meta_predicate(must(0)).
+%:- meta_predicate(must(0)).
+%:- meta_predicate(must(0)).
 
 %=
 
