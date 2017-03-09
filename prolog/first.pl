@@ -999,7 +999,7 @@ quiet_all_module_predicates_are_transparent(ModuleName):-
 :- multifile(user:term_expansion/2).
 :- dynamic(user:term_expansion/2).
 :- module_transparent(user:term_expansion/2).
-% user:term_expansion( (:-export(FA) ),(:- export_if_noconflict(M,FA))):-  current_prolog_flag(lm_expanders,true),prolog_load_context(module,M).
+% user:term_expansion( (:-export(FA) ),(:- export_if_noconflict(M,FA))):-  current_prolog_flag(subclause_expansion,true),prolog_load_context(module,M).
 
 
 :- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),

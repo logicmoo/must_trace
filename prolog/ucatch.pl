@@ -63,11 +63,11 @@
             ib_multi_transparent33/1,
             if_defined/1,if_defined/2,
             input_key/1,
-            is_ftCompound/1,
+            is_ftCompound/1,ftCompound/1, 
             not_ftCompound/1,
             is_ftNameArity/2,
-            is_ftNonvar/1,
-            is_ftVar/1,
+            is_ftNonvar/1,ftNonvar/1,
+            is_ftVar/1,ftVar/1,
 
             is_main_thread/0,
             is_pdt_like/0,
@@ -710,7 +710,7 @@ with_current_why(Why,Prolog):- locally(t_l:current_local_why(Why,Prolog),Prolog)
 %
 % Source Module.
 %
-source_module(M):-nonvar(M),!,source_module(M0),!,must(M0=M).
+source_module(M):-nonvar(M),!,source_module(M0),!,(M0=M).
 source_module(M):-'$current_source_module'(M),!.
 source_module(M):-loading_module(M),!.
 
@@ -1388,6 +1388,8 @@ flag_call0(FlagHowValue):- FlagHowValue=..[How,Flag,Value],
 % skipWrapper:-!,fail.
 skipWrapper:- notrace((ucatch:skipWrapper0)).
 % skipWrapper:- tracing,!.
+
+skipWrapper0:- current_prolog_flag(bugger,false),!.
 skipWrapper0:- tracing, \+ tlbugger:rtracing,!.
 skipWrapper0:- tlbugger:dont_skip_bugger,!,fail.
 skipWrapper0:- flag_call(runtime_debug == true) ,!,fail.
@@ -1569,9 +1571,8 @@ need_speed:-current_prolog_flag(unsafe_speedups , true) .
 %
 % If Is A Release.
 
-is_release:-!.
-is_release:- flag_call(unsafe_speedups == false) ,!,fail.
-is_release:-!,fail.
+is_release:- current_prolog_flag(unsafe_speedups, false) ,!,fail.
+is_release:- !,fail.
 is_release:- current_prolog_flag(unsafe_speedups , true) ,!.
 is_release:- notrace((\+ flag_call(runtime_debug == true) , \+ (1 is random(4)))).
 

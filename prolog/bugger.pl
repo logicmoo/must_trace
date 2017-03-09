@@ -45,7 +45,7 @@
             caller_module/2,
             callsc/1,
 
-          all_source_file_predicates_are_transparent/0,
+          % all_source_file_predicates_are_transparent/0,
           all_source_file_predicates_are_transparent/1,
 
 
@@ -447,7 +447,7 @@
 :- set_module(class(library)).
 
 
-
+/*
 %% all_source_file_predicates_are_transparent() is det.
 %
 % All Module Predicates Are Transparent.
@@ -457,6 +457,7 @@
 all_source_file_predicates_are_transparent:-
   must(prolog_load_context(source,SFile)),all_source_file_predicates_are_transparent(SFile),
   must(prolog_load_context(file,File)),(SFile==File->true;all_source_file_predicates_are_transparent(File)).
+*/
 
 :- module_transparent(all_source_file_predicates_are_transparent/1).
 :- export(all_source_file_predicates_are_transparent/1).
