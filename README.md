@@ -111,6 +111,7 @@ Y = 5.
 
 ```
 
+
 # Some TODOs
 
 Document this pack!
@@ -129,5 +130,9 @@ All rights reserved.
 
 Dislike having tons of forks that are several commits behind the main git repo?
 
-Please ask to be added to TeamSPoon !
+Be old school - Please ask to be added to TeamSPoon and Contribute directly !
+Still, we wont stop you from doing it the Fork+PullRequest method
+
+
+
 

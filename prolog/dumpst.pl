@@ -41,10 +41,7 @@
   dumptrace(0),
   dtrace(*,0).
 
-/*
-:- use_module(library(rtrace)).
-:- use_module(library(bugger)).
-*/
+
 :- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
 :- reexport(library(rtrace)).
@@ -611,6 +608,7 @@ dumptrace(_,C):-fmt(unused_keypress(C)),!,fail.
 %
 dumptrace_ret(G):- notrace((leash(+all),visible(+all),visible(+unify),trace)),G.
 
+:- fixup_exports.
 
 
 end_of_file.
