@@ -24,12 +24,7 @@ Wrap `nop/1` over parts of your code you do not want to quickly comment out yet 
 
 # Installation using SWI-Prolog 7.1 or later:
 
-    `?- pack_install(must_trace).`
-
-  or
-
     `?- pack_install('https://github.com/TeamSPoon/must_trace.git'). `
-
 
 
 TODO Document all the preds!
