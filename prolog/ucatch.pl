@@ -324,8 +324,9 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 :- thread_local( tlbugger:skip_bugger/0).
 :- thread_local( tlbugger:dont_skip_bugger/0).
 
-:-meta_predicate(skip_failx_u(0)).
-skip_failx_u(G):-call_each([baseKB:call_u,on_xf_log_cont,notrace],G).
+:-meta_predicate(skip_failx_u(*)).
+skip_failx_u(G):- must_det_l(G).
+% skip_failx_u(G):-call_each([baseKB:call_u,on_xf_log_cont,notrace],G).
 
 
 

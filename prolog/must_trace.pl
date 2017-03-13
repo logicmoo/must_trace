@@ -70,7 +70,7 @@ must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
 % like assertion/1 but adds trace control
 %
 
-sanity(_):- current_prolog_flag(runtime_safety,0),!.
+sanity(_):- notrace(current_prolog_flag(runtime_safety,0)),!.
 
 sanity(Goal):- \+ tracing,
    \+ current_prolog_flag(runtime_safety,3),
@@ -78,7 +78,7 @@ sanity(Goal):- \+ tracing,
    (current_prolog_flag(runtime_speed,S),S>1),
    !,
    (1 is random(10)-> must(Goal) ; true).
-sanity(Goal):- quietly(Goal),!.
+sanity(Goal):- notrace(quietly(Goal)),!.
 sanity(_):- dumpST,fail.
 sanity(Goal):- tlbugger:show_must_go_on,!,dmsg(show_failure(sanity,Goal)).
 sanity(Goal):- setup_call_cleanup(wdmsg(begin_FAIL_in(Goal)),rtrace(Goal),wdmsg(end_FAIL_in(Goal))),!,dtrace(assertion(Goal)).

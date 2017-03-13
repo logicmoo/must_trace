@@ -185,6 +185,8 @@ srtrace:- notrace, set_prolog_flag(access_level,system), rtrace.
 nortrace:- notrace,pop_guitracer,maybe_leash(-all),maybe_leash(+all),visible(+all),visible(+exception),maybe_leash(+exception),
   (retract(t_l:rtracing)->pop_tracer;true),!.
 
+stop_rtrace:- ignore(retract(tl_rtrace:rtracing)),visible(+all),visible(+exception),maybe_leash(+all),maybe_leash(+exception).
+
 :- '$set_predicate_attribute'(nortrace, trace, 0).
 :- '$set_predicate_attribute'(nortrace, hide_childs, 1).
 
@@ -241,7 +243,7 @@ rtrace(Goal):-
 % or on total failure
 %
 rtrace_break(Goal):- \+ maybe_leash, !, rtrace(Goal).
-rtrace_break(Goal):- debugCallWhy(rtrace_break(Goal),Goal).
+rtrace_break(Goal):- stop_rtrace,trace,debugCallWhy(rtrace_break(Goal),Goal).
 :- '$set_predicate_attribute'(rtrace_break(_), trace, 0).
 :- '$set_predicate_attribute'(rtrace_break(_), hide_childs, 0).
 

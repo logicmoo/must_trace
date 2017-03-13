@@ -854,7 +854,7 @@ if_color_debug(Gaol,UnColor):- if_color_debug->Gaol;UnColor.
 :- multifile(tlbugger:no_slow_io/0).
 %:- asserta(tlbugger:no_slow_io).
 
-:- set_prolog_flag(retry_undefined,true).
+:- create_prolog_flag(retry_undefined,default,[type(term),keep(true)]).
 
 if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 %= 	 	 
