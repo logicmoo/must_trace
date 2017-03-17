@@ -5,7 +5,7 @@ Some better parts of that library are not yet added.
 
 Here are current uses:
 
-Wrap `no_trace/1` over parts of your code you no longer need to stepped thru.
+Wrap `quietly/1` over parts of your code you no longer need to stepped thru.
 This is a *nondeterministic* version of notrace/1!
 
 
@@ -24,12 +24,7 @@ Wrap `nop/1` over parts of your code you do not want to quickly comment out yet 
 
 # Installation using SWI-Prolog 7.1 or later:
 
-    `?- pack_install(must_trace).`
-
-  or
-
     `?- pack_install('https://github.com/TeamSPoon/must_trace.git'). `
-
 
 
 TODO Document all the preds!
@@ -116,9 +111,30 @@ Y = 5.
 
 ```
 
-[BSD 2-Clause License](LICENSE.md)
+
+
+# Some TODOs
+
+Document this pack!
+
+Write tests
+
+Untangle the 'pack' install deps 
+(Moving predicates over here from logicmoo_base)
+
+
+# Not _obligated_ to maintain a git fork just to contribute
+
+Dislike having tons of forks that are several commits behind the main git repo?
+
+Be old school - Please ask to be added to TeamSPoon and Contribute directly !
+
+Still, we wont stop you from doing it the Fork+PullRequest method
+
+# [BSD 2-Clause License](LICENSE.md)
 
 Copyright (c) 2017, 
-Douglas Miles <logicmoo@gmail.com>
+TeamSPoon and Douglas Miles <logicmoo@gmail.com> 
 All rights reserved.
+
 

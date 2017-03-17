@@ -1,14 +1,14 @@
 name(must_trace).
 title('Trace with your eyeballs instead of your fingers').
 
-version('0.0.8').
+version('1.1.114').
 download('https://github.com/TeamSPoon/must_trace/releases/*.zip').
 
 author( 'Douglas R. Miles', 'logicmoo@gmail.com' ).
-packager( 'Douglas R. Miles', 'logicmoo@gmail.com' ).
-maintainer( 'Douglas R. Miles', 'logicmoo@gmail.com' ).
+packager( 'TeamSPoon/LogicMoo', 'https://github.com/TeamSPoon/' ).
+maintainer( 'TeamSPoon', 'https://github.com/TeamSPoon/' ).
 home('https://github.com/TeamSPoon/must_trace').
-requires(dictoo).
 requires(clause_attvars).
+requires(logicmoo_utils).
 autoload(true).
 

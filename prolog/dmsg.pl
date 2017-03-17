@@ -276,6 +276,7 @@ with_output_to_each(Output,Goal):-
 % = :- meta_predicate(with_show_dmsg(*,0)).
 
 
+:- thread_local(tlbugger:tl_always_show_dmsg/0).
 
 %= 	 	 
 
@@ -414,7 +415,7 @@ dmsg_text_to_string_safe(Expr,Forms):-on_x_fail(text_to_string(Expr,Forms)).
 %
 % Catchvvnt.
 %
-catchvvnt(T,E,F):-catchv(no_trace(T),E,F).
+catchvvnt(T,E,F):-catchv(quietly(T),E,F).
 
 :- meta_predicate(catchvvnt(0,?,0)).
 
@@ -578,7 +579,7 @@ dfmt(X,Y):- get_thread_current_error(Err), with_output_to_stream(Err,fmt(X,Y)).
 
 %= 	 	 
 
-%% with_output_to_stream( ?Stream, :GoalGoal) is semidet.
+%% with_output_to_stream( ?Stream, :Goal) is semidet.
 %
 % Using Output Converted To Stream.
 %
@@ -669,7 +670,7 @@ loggerFmtReal(S,F,A):-
 
 %= 	 	 
 
-%% with_dmsg( ?Functor, :GoalGoal) is semidet.
+%% with_dmsg( ?Functor, :Goal) is semidet.
 %
 % Using (debug)message.
 %
@@ -853,7 +854,7 @@ if_color_debug(Gaol,UnColor):- if_color_debug->Gaol;UnColor.
 :- multifile(tlbugger:no_slow_io/0).
 %:- asserta(tlbugger:no_slow_io).
 
-:- set_prolog_flag(retry_undefined,true).
+:- create_prolog_flag(retry_undefined,default,[type(term),keep(true)]).
 
 if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 %= 	 	 
@@ -1113,8 +1114,10 @@ debugm(X):-notrace((debugm(X,X))).
 %
 % Debugm.
 %
+debugm(Why,Msg):- wdmsg(debugm(Why,Msg)),!.
 debugm(Why,Msg):- notrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
 debugm(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
+
 
 
 % = :- export(colormsg/2).
@@ -1622,3 +1625,11 @@ cls:- shell(cls).
 :- 'mpred_trace_none'(dmsg(_,_)).
 :- 'mpred_trace_none'(portray_clause_w_vars(_)).
 */
+
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
+
+ 

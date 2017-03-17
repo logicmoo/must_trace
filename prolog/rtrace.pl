@@ -14,20 +14,19 @@
    [
       rtrace/1,  % Non-interactive tracing
       rtrace_break/1,  % Interactive tracing
-      no_trace/1,  % Non-det notrace/1
+      quietly/1,  % Non-det notrace/1
       restore_trace/1, % After call restor tracer
       rtrace/0, % Start non-intractive tracing
       srtrace/0, % Start non-intractive tracing at System level
       nortrace/0, % Stop non-intractive tracing
-      reset_tracer/0, % Reset Tracer to "normal"
+      push_tracer/0,pop_tracer/0,reset_tracer/0, % Reset Tracer to "normal"
       on_x_debug/1, % Non-intractive tracing when exception occurs 
       on_f_rtrace/1, % Non-intractive tracing when failure occurs 
       maybe_leash/1, % Set leash only when it makes sense
       maybe_leash/0,
       non_user_console/0,
       ftrace/1, % rtrace showing only failures
-      push_guitracer/0,
-      pop_guitracer/0
+      push_guitracer/0,pop_guitracer/0
    ]).
 
 :- set_module(class(library)).
@@ -42,11 +41,10 @@
    rtrace(0),
    restore_trace(0),
    on_x_debug(0),
-   on_f_rtrace(0),
-   scce_orig(0,0,0),        
+   on_f_rtrace(0),  
    rtrace(0),
    rtrace_break(0),
-   no_trace(0),
+   quietly(0),
    ftrace(0).
 
 %! on_f_rtrace( :Goal) is det.
@@ -81,14 +79,15 @@ non_user_console:- \+ stream_property(current_input,close_on_abort(false)).
 %
 % Get Tracer.
 %
-get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,CC2,'$visible'(_, OldV),'$leash'(_, OldL),RestoreTrace)):- 
+get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,'$visible'(_, OldV),'$leash'(_, OldL),RestoreTrace)):- 
+     (notrace(tracing) -> (notrace,RestoreTrace = trace) ; RestoreTrace = notrace),
      '$leash'(OldL, OldL),'$visible'(OldV, OldV),
-     (current_prolog_flag(debug,true)->WasDebug=true;WasDebug=false),
-     (t_l:rtracing->CC2=rtrace;CC2= nortrace),
-     (tracing -> RestoreTrace = trace ; RestoreTrace = notrace),
-     (current_prolog_flag(gui_tracer, GWas)->CC3=set_prolog_flag(gui_tracer, GWas);CC3=true),!.
+     (current_prolog_flag(debug,true)->WasDebug=true;WasDebug=false),     
+     (current_prolog_flag(gui_tracer, GWas)->CC3=set_prolog_flag(gui_tracer, GWas);CC3=true),!,
+     RestoreTrace.
 
 :- '$set_predicate_attribute'(get_trace_reset(_), trace, 0).
+:- '$set_predicate_attribute'(get_trace_reset(_), hide_childs, 1).
 
 
 
@@ -96,23 +95,25 @@ get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,CC2,'$visible'(_, O
 %
 % Save Guitracer.
 %
-push_guitracer:- (((current_prolog_flag(gui_tracer, GWas);GWas=false),asserta(t_l:wasguitracer(GWas)))).
+push_guitracer:-  notrace(ignore(((current_prolog_flag(gui_tracer, GWas);GWas=false),asserta(t_l:wasguitracer(GWas))))).
 :- '$hide'(push_guitracer/0).
+:- '$set_predicate_attribute'(push_guitracer(), hide_childs, 1).
 
 
 %! pop_guitracer is nondet.
 %
 % Restore Guitracer.
 %
-pop_guitracer:- ((retract(t_l:wasguitracer(GWas)),set_prolog_flag(gui_tracer, GWas))).
+pop_guitracer:- notrace(ignore(((retract(t_l:wasguitracer(GWas)),set_prolog_flag(gui_tracer, GWas))))).
 :- '$hide'(pop_guitracer/0).
+:- '$set_predicate_attribute'(pop_guitracer(), hide_childs, 1).
 
 
 %! push_tracer is det.
 %
 % Push Tracer.
 %
-push_tracer:- notrace((get_trace_reset(Reset),asserta(t_l:tracer_reset(Reset)))),!.
+push_tracer:- get_trace_reset(Reset)->asserta(t_l:tracer_reset(Reset)).
 :- '$set_predicate_attribute'(push_tracer, trace, 0).
 :- '$set_predicate_attribute'(push_tracer, hide_childs, 1).
 
@@ -121,7 +122,7 @@ push_tracer:- notrace((get_trace_reset(Reset),asserta(t_l:tracer_reset(Reset))))
 %
 % Pop Tracer.
 %
-pop_tracer:- notrace(retract(t_l:tracer_reset(Reset))->Reset;true).
+pop_tracer:- notrace((retract(t_l:tracer_reset(Reset))->Reset;true)).
 :- '$set_predicate_attribute'(pop_tracer, trace, 0).
 :- '$set_predicate_attribute'(pop_tracer, hide_childs, 1).
 
@@ -130,7 +131,7 @@ pop_tracer:- notrace(retract(t_l:tracer_reset(Reset))->Reset;true).
 %
 % Reset Tracer.
 %
-reset_tracer:- notrace(ignore(t_l:tracer_reset(Reset)->Reset;true)).
+reset_tracer:- notrace(ignore((t_l:tracer_reset(Reset)->Reset;true))).
 :- '$set_predicate_attribute'(reset_tracer, trace, 0).
 :- '$set_predicate_attribute'(reset_tracer, hide_childs, 1).
 
@@ -143,25 +144,15 @@ user:prolog_exception_hook(error(_, _),_, _, _) :-
      leash(+all),
      fail.
 
-%! no_trace( :Goal) is det.
+%! quietly( :Goal) is nondet.
 %
 % Unlike notrace/1, it allows nondet tracing 
 %
 % But also may be break when excpetions are raised during Goal.
 %
-no_trace(Goal):- setup_call_cleanup(push_tracer,(notrace,Goal),pop_tracer).
-
-/*
-no_trace(Goal):- \+ tracing,!,call(Goal).
-no_trace(Goal):-
-   ((tracing,notrace )-> Tracing = trace ;   Tracing = true),
-   '$leash'(OldL, OldL),'$visible'(OldV, OldV),
-   (Undo =   notrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
-   (RTRACE = notrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
-   each_call_cleanup(RTRACE,(notrace,Goal),Undo).
-*/
-:- '$set_predicate_attribute'(no_trace(_), hide_childs, 1).
-:- '$set_predicate_attribute'(no_trace(_), trace, 0).
+quietly(Goal):- (notrace(tracing;t_l:rtracing),notrace)->each_call_cleanup(notrace,Goal,trace);Goal.
+:- '$set_predicate_attribute'(quietly(_), hide_childs, 1).
+:- '$set_predicate_attribute'(quietly(_), trace, 0).
 
 
 
@@ -169,9 +160,9 @@ no_trace(Goal):-
 %
 % Start RTracer.
 %
-rtrace:- notrace, (t_l:rtracing -> true ; (assert(t_l:rtracing),push_tracer)),
+rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; ((notrace,assert(t_l:rtracing),push_tracer,      
       push_guitracer,set_prolog_flag(gui_tracer,false),visible(+all),visible(+exception),
-      maybe_leash(-all),maybe_leash(+exception),debug,trace.
+      maybe_leash(-all),maybe_leash(+exception),debug,trace))).
 
 :- '$set_predicate_attribute'(rtrace, trace, 0).
 :- '$set_predicate_attribute'(rtrace, hide_childs, 1).
@@ -191,8 +182,11 @@ srtrace:- notrace, set_prolog_flag(access_level,system), rtrace.
 %
 % Stop Tracer.
 %
-nortrace:- notrace,pop_guitracer,maybe_leash(-all),visible(+all),visible(+exception),maybe_leash(+exception),
-  (retract(t_l:rtracing)->pop_tracer;true),maybe_leash(+all).
+nortrace:- notrace,pop_guitracer,maybe_leash(-all),maybe_leash(+all),visible(+all),visible(+exception),maybe_leash(+exception),
+  (retract(t_l:rtracing)->pop_tracer;true),!.
+
+stop_rtrace:- ignore(retract(tl_rtrace:rtracing)),visible(+all),visible(+exception),maybe_leash(+all),maybe_leash(+exception).
+
 :- '$set_predicate_attribute'(nortrace, trace, 0).
 :- '$set_predicate_attribute'(nortrace, hide_childs, 1).
 
@@ -204,6 +198,12 @@ nortrace:- notrace,pop_guitracer,maybe_leash(-all),visible(+all),visible(+except
 %
 % restore  Trace.
 %
+%! restore_trace( :Goal) is nondet.
+%
+% restore  Trace.
+%
+restore_trace(Goal):- !,
+  each_call_cleanup(push_tracer,Goal,pop_tracer).
 restore_trace(Goal):- 
   '$leash'(OldL, OldL),'$visible'(OldV, OldV),
    scce_orig(restore_leash_visible,
@@ -243,7 +243,7 @@ rtrace(Goal):-
 % or on total failure
 %
 rtrace_break(Goal):- \+ maybe_leash, !, rtrace(Goal).
-rtrace_break(Goal):- debugCallWhy(rtrace_break(Goal),Goal).
+rtrace_break(Goal):- stop_rtrace,trace,debugCallWhy(rtrace_break(Goal),Goal).
 :- '$set_predicate_attribute'(rtrace_break(_), trace, 0).
 :- '$set_predicate_attribute'(rtrace_break(_), hide_childs, 0).
 
@@ -255,7 +255,7 @@ next_rtrace:- (nortrace;(rtrace,trace,notrace(fail))).
 
 
 :- unlock_predicate(system:notrace/1).
-%:- if_may_hide('$set_predicate_attribute'(no_trace(_), trace, 0)).
+%:- if_may_hide('$set_predicate_attribute'(quietly(_), trace, 0)).
 %:- if_may_hide('$set_predicate_attribute'(system:notrace(_), hide_childs, 1)).
 %:- if_may_hide('$set_predicate_attribute'(system:notrace(_), trace, 0)).
 :- '$set_predicate_attribute'(system:tracing, trace, 0).
@@ -263,7 +263,7 @@ next_rtrace:- (nortrace;(rtrace,trace,notrace(fail))).
 :- '$set_predicate_attribute'(system:trace, trace, 0).
 :- lock_predicate(system:notrace/1).
 
-%! ftrace( :GoalGoal) is nondet.
+%! ftrace( :Goal) is nondet.
 %
 % Functor Trace.
 %
@@ -271,6 +271,14 @@ ftrace(Goal):- restore_trace((
    visible(-all),visible(+unify),
    visible(+fail),visible(+exception),
    maybe_leash(-all),maybe_leash(+exception),trace,Goal)).
+
+
+
+:- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
+ forall(source_file(M:H,S),
+ ignore((functor(H,F,A),
+  ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
+  ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
 
 
 end_of_file.
@@ -385,65 +393,10 @@ nortrace:- notrace,stop_rtrace.
 stop_rtrace:- ignore(retract(tl_rtrace:rtracing)),visible(+all),visible(+exception),maybe_leash(+all),maybe_leash(+exception).
 
 push_tracer_and_notrace:- notrace,push_tracer,notrace.
-   
-
-
-%! push_tracer is nondet.
-%
-% Push Tracer.
-%
-push_tracer:- hotrace((get_tracer(Reset),asserta(t_l:wastracer(Reset)))),!.
 
 
 
-%! pop_tracer is nondet.
-%
-% Pop Tracer.
-%
-pop_tracer:- notrace((retract(t_l:wastracer(Reset)),!,Reset)),!.
-
-
-
-%! reset_tracer is nondet.
-%
-% Reset Tracer.
-%
-reset_tracer:- notrace((ignore(((t_l:wastracer(Reset),Reset))))).
- 
-
-
-
-%! get_tracer( ?Reset) is nondet.
-%
-% Get Tracer.
-%
-get_tracer(Reset):- 
-    Reset =  ((set_prolog_flag(debug,WasDebug),CC,CC2,'$leash'(_, OldL),'$visible'(_, OldV))),
-    '$leash'(OldL, OldL),'$visible'(OldV, OldV),
-     (current_prolog_flag(debug,true)->WasDebug=true;WasDebug=false),
-     (tl_rtrace:rtracing->CC2=rtrace;CC2= nortrace),
-     (tracing -> CC = trace ; CC = notrace),!.
-
-    
-
- :- meta_predicate  restore_trace(0).
-
-
-
-%! restore_trace( :GoalGoal) is nondet.
-%
-% restore  Trace.
-%
-restore_trace(Goal):- 
-  each_call_cleanup(push_tracer,Goal,pop_tracer).
-
-
- :- meta_predicate  rtrace(0).
-
-
-
-
-%! rtrace( :GoalGoal) is nondet.
+%! rtrace( :Goal) is nondet.
 %
 % R Trace.
 %
@@ -515,9 +468,6 @@ rtrace(Goal):-
 %:- ( listing(hotrace/1),redefine_system_predicate(system:notrace(_)), mpred_trace_none(hotrace(0)) ).
 % :- if_may_hide('$set_predicate_attribute'(hotrace(_), trace, 0)).
 % :- if_may_hide('$set_predicate_attribute'(hotrace(_), hide_childs, 1)).
-
-
-:- export(on_x_debug/1).
 
 
 

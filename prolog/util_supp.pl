@@ -28,14 +28,14 @@ end_of_file.
 end_of_file.
 
 :- if(\+ current_predicate(system:must_or_die/1)).
-:- module(logicmoo_util_supp,[must_or_die/1,must_atomic/1,nop/1,no_trace/1,each_call_cleanup/3]).
+:- module(logicmoo_util_supp,[must_or_die/1,must_atomic/1,nop/1,quietly/1,each_call_cleanup/3]).
 :- endif.
 % % :- '$set_source_module'(system).
 :- meta_predicate
       must_atomic(0),
       must_notrace(0),
       must_or_die(0),      
-      no_trace(0),
+      quietly(0),
       nop(0),
       each_call_cleanup(0,0,0),
       call_cleanup_each(0,0).
@@ -67,13 +67,13 @@ system:must_atomic(Goal):- must_or_die(notrace(('$sig_atomic'(Goal)))).
 
 :- module_transparent(must_notrace/1).
 :- '$hide'(must_notrace/1).
-system:must_notrace(Goal):- no_trace(must_or_die(Goal)).
+system:must_notrace(Goal):- quietly(must_or_die(Goal)).
 
-:- if(\+ current_predicate(no_trace/1)).
-:- module_transparent(no_trace/1).
-:- '$hide'(no_trace/1).
-no_trace(G):- !,call(G).
-no_trace(G):- notrace((tracing,notrace))->
+:- if(\+ current_predicate(quietly/1)).
+:- module_transparent(quietly/1).
+:- '$hide'(quietly/1).
+quietly(G):- !,call(G).
+quietly(G):- notrace((tracing,notrace))->
    each_call_cleanup(notrace(notrace),G,notrace(trace)); 
    each_call_cleanup(notrace(notrace),G,notrace(notrace)).
 :- endif.

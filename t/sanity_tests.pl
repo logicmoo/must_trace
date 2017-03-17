@@ -22,7 +22,7 @@ test_must_throw:- must_det(between(0,2,_)).
 
 test_must_throw:- sanity(fail).
 
-% quietly(:GOAL) - if tracing, temporaily no_trace/1
+% quietly(:GOAL) - if tracing, temporaily quietly/1
 test_must_throw:- trace, quietly(must(\+ tracing)).
 
 all_tests:- forall(clause(test_must_throw,Goal),
