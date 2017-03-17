@@ -45,6 +45,7 @@
 :- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
 :- reexport(library(rtrace)).
+:- reexport(library(must_trace)).
 
 
 :- set_prolog_flag(backtrace_depth,      200).
