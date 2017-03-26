@@ -488,7 +488,6 @@ all_source_file_predicates_are_transparent(File):-
 swi_module(M,Preds):- forall(member(P,Preds),M:export(P)). % ,dmsg(swi_module(M)).
 
 
-
 dont_make_cyclic(G):-skipWrapper,!,call(G).
 dont_make_cyclic(G):-cyclic_break(G),!,G,cyclic_break(G).
 
@@ -564,7 +563,7 @@ set_bugger_flag(F,V):-create_prolog_flag(F,V,[keep(true),tCol(ftTerm)]),!.
 %
 % If there If Is an exception in :Goal just fail
 %
-on_x_fail(Goal):- notrace(catchv(Goal,_,fail)).
+on_x_fail(Goal):- catchv(Goal,_,fail).
 
 
 :- meta_predicate(call_count(0,?)).
@@ -2465,25 +2464,22 @@ time_call(Call):-
 % Gripe Time.
 %
 
-gripe_time(_TooLong,Goal):- \+ current_prolog_flag(runtime_debug,3),\+ current_prolog_flag(runtime_debug,2),!,Goal.
-gripe_time(_TooLong,Goal):- !,Goal.
-gripe_time(TooLong,Goal):- statistics(cputime,StartCPU),
-  My_StartCPU = start(StartCPU),
+% gripe_time(_TooLong,Goal):- \+ current_prolog_flag(runtime_debug,3),\+ current_prolog_flag(runtime_debug,2),!,Goal.
+gripe_time(TooLong,Goal):- statistics(cputime,StartCPU0),
+  My_StartCPU = start(StartCPU0),
   statistics(walltime,[StartWALL,_]),
-  NeedGripe=v(yes),!,
+  NeedGripe=v(no),!,
   (Goal*->Success=true;Success=fail),
   once((statistics(walltime,[EndWALL,_]),statistics(cputime,EndCPU),
      (arg(1,My_StartCPU,StartCPU), ElapseCPU is EndCPU-StartCPU,nb_setarg(1,My_StartCPU,EndCPU)),
      ((ground(NeedGripe),ElapseCPU>TooLong,nb_setarg(1,NeedGripe,_))
-        -> (wdmsg(gripe_CPUTIME(warn(ElapseCPU>TooLong),Goal)))
+        -> (wdmsg(gripe_CPUTIME(Success,warn(ElapseCPU>TooLong),Goal)))
         ; (ElapseWALL is (EndWALL-StartWALL)/1000,
              ((ground(NeedGripe),ElapseWALL>TooLong,nb_setarg(1,NeedGripe,_))
-                  -> wdmsg(gripe_WALLTIME(warn(ElapseWALL>TooLong),cputime=ElapseCPU,Goal))
+                  -> wdmsg(gripe_WALLTIME(Success,warn(ElapseWALL>TooLong),cputime=ElapseCPU,Goal))
                   ; true))))), 
+  nb_setarg(1,NeedGripe,no),
   Success.
-
-
-
 
 
 %% cleanup_strings is semidet.

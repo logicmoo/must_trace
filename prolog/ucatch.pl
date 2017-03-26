@@ -43,7 +43,7 @@
             %bubbled_ex_check/1,
             catchv/3,
             flag_call/1,
-            current_source_file/1,current_source_location0/1,
+            current_source_file/1,current_source_location0/2,
             lmcache:current_main_error_stream/1,
             lmcache:thread_current_input/2,
             dbgsubst/4,
@@ -91,7 +91,7 @@
             trace_or_throw/1,
 
             %must/1,
-            must3/3,
+            must2/2,
             must_det_u/1,
             %must_det_dead/2,
             must_l/1,
@@ -110,7 +110,7 @@
             one_must/2,
             one_must_det/2,
             % sanity/1,
-            sanity3/3,
+            sanity2/2,
             save_streams/0,
             save_streams/1,
             set_block_exit/2,
@@ -198,7 +198,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 
 
         % must(0),
-        must3(+,+,0),
+        must2(+,0),
         must_find_and_call(0),
         must_det_u(0),
         %must_det_dead(0, 0),
@@ -214,7 +214,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         one_must_det(0, 0),
         unsafe_safe(0,0),
         % sanity(0),
-        sanity3(+,+,0),
+        sanity2(+,0),
         slow_sanity(0),
         to_pi(?, ?),
         when_defined(:),
@@ -375,7 +375,7 @@ with_current_io(Goal):-
 
 
 with_dmsg_to_main(Goal):-
-  get_main_error_stream(Err),current_error(ErrWas),Err=ErrWas,!,Goal.
+  get_main_error_stream(Err),current_error(ErrWas),Err==ErrWas,!,Goal.
 with_dmsg_to_main(Goal):-
   get_main_error_stream(Err),current_error(ErrWas),
   current_input(IN),current_output(OUT),
@@ -655,30 +655,32 @@ sl_to_filename(W,To):-nonvar(To),To=(W:_),atom(W),!.
 
 %=
 
-%% current_source_file( ?F) is semidet.
+%% current_source_file( -CtxColonLinePos) is semidet.
 %
 % Current Source Location.
 %
-current_source_file(F):- clause(current_source_location0(W),Body),catchv(Body,_,fail),
+current_source_file(F:L):- clause(current_source_location0(W,L),Body),catchv(Body,_,fail),
  sl_to_filename(W,F),!.
 current_source_file(F):- F = unknown.
 
 
+source_ctx(B:L):-current_source_file(F:L),file_base_name(F,B).
+
 %=
 
-%% current_source_location0( :TermF) is semidet.
+%% current_source_location0( -Ctx, -LinePos) is semidet.
 %
 % Current Source Location Primary Helper.
 %
-current_source_location0(F):- t_l:current_why_source(F).
-current_source_location0(F:L):-source_location(F,L),!.
-current_source_location0(F:L):-prolog_load_context(file,F),current_input(S),line_position(S,L),!.
-current_source_location0(F):-loading_file(F).
-current_source_location0(F:L):- current_filesource(F),ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
-current_source_location0(F:L):- prolog_load_context(file,F),!,ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
-current_source_location0(module(M)):-source_module(M),!.
-current_source_location0(When):-current_input(S),findall(NV,stream_property(S,NV),When),!.
-current_source_location0(module(M)):- '$current_typein_module'(M).
+current_source_location0(F,why):- t_l:current_why_source(F).
+current_source_location0(F,L):-source_location(F,L),!.
+current_source_location0(F,L):-prolog_load_context(file,F),current_input(S),line_position(S,L),!.
+current_source_location0(F,loading_file):-loading_file(F).
+current_source_location0(F,L):- prolog_load_context(file,F),!,ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
+current_source_location0(F,L):- current_input(S),stream_property(S,position(L)),stream_property(S,alias(F)).
+current_source_location0(M,source):- source_module(M),!.
+current_source_location0(F,L):- current_filesource(F),ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
+current_source_location0(M,typein):- '$current_typein_module'(M).
 
 :-export(current_why/1).
 :-module_transparent(current_why/1).
@@ -1676,11 +1678,26 @@ get_must(Goal,CGoal):-
 %:- 'mpred_trace_none'(ddmsg(_,_)).
 
 
-sanity3(_,_,Goal):- sanity(Goal).
-must3(_,_,Goal):- must(Goal).
+sanity2(_Loc,Goal):- sanity(Goal).
+must2(_Loc,Goal):- must(Goal).
 
-system:goal_expansion(I,O):-compound(I),I=sanity(Goal),source_location(F,L),O= sanity3(F,L,Goal).
-system:goal_expansion(I,O):-compound(I),I=must(Goal),source_location(F,L), O= must3(F,L,Goal).
+ge_expand_goal(G,G):- \+ compound(G),!,fail.
+ge_expand_goal(G,GO):- expand_goal(G,GO).
+
+% ge_must_sanity(sanity(_),true).
+% ge_must_sanity(must(Goal),GoalO):-ge_expand_goal(Goal,GoalO).
+% ge_must_sanity(find_and_call(Goal),GoalO):-ge_expand_goal(Goal,GoalO).
+
+ge_must_sanity(sanity(Goal),nop(sanity(GoalO))):-ge_expand_goal(Goal,GoalO).
+ge_must_sanity(must(Goal),(GoalO*->true;debugCallWhy(failed_must(Goal,FL),GoalO))):- source_ctx(FL),ge_expand_goal(Goal,GoalO).
+
+ge_must_sanity(P,O):- P=..[F,Arg],nonvar(Arg),ge_must_sanity(F,Arg,O).
+
+ge_must_sanity(sanity,Goal,sanity2(FL,Goal)):- source_ctx(FL).
+ge_must_sanity(must,Goal,must2(FL,Goal)):- source_ctx(FL).
+% ge_must_sanity(must_det_l,Goal,must2(FL,Goal)):- source_ctx(FL).
+
+system:goal_expansion(I,P,O,P):- compound(I), source_location(_,_), once(ge_must_sanity(I,O)),I \== O.
 
 :- dynamic(inlinedPred/1).
 
@@ -1698,4 +1715,4 @@ file_line(F,What,File,L):- (debugging(F)->wdmsg(file_line(F,What,File,L));true).
   ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
   ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
 
- 
+% :- set_prolog_flag(compile_meta_arguments,true).

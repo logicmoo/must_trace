@@ -1,7 +1,7 @@
 name(must_trace).
 title('Trace with your eyeballs instead of your fingers').
 
-version('1.1.115').
+version('1.1.117').
 download('https://github.com/TeamSPoon/must_trace/releases/*.zip').
 
 author( 'Douglas R. Miles', 'logicmoo@gmail.com' ).

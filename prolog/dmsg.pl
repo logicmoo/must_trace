@@ -234,8 +234,8 @@ dmsg000/1,
 
 :- set_module(class(library)).
 
-:- use_module(system:library(memfile)).
-:- reexport(first).
+:- system:use_module(library(memfile)).
+:- system:use_module(first).
 %:- system:ensure_loaded(logicmoo_util_rtrace).
 :- system:ensure_loaded(library(with_thread_local)).
 %:- system:ensure_loaded(logicmoo_util_loop_check).
