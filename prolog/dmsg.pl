@@ -1136,9 +1136,9 @@ debugm(X):-notrace((debugm(X,X))).
 %
 % Debugm.
 %
-debugm(Why,Msg):- wdmsg(debugm(Why,Msg)),!.
-debugm(Why,Msg):- notrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
-debugm(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
+debugm(Why,Msg):- dmsg(debugm(Why,Msg)),!,debugm0(Why,Msg).
+debugm0(Why,Msg):- notrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
+debugm0(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
 
 
 
