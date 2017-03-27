@@ -710,7 +710,7 @@ if_interactive0(Goal):-
 
 
 :- create_prolog_flag(bugger_debug,filter,[type(term),keep(true)]).
-:- create_prolog_flag(opt_debug,filter,[type(term),keep(true)]).
+:- create_prolog_flag(dmsg_level,filter,[type(term),keep(true)]).
 :- create_prolog_flag(dmsg_color,true,[type(boolean),keep(false)]).
 
 % :- mpred_trace_nochilds(system:catch/3).
@@ -743,7 +743,7 @@ set_prolog_flag(N,V):- current_prolog_flag(N,VV),!,
 */
 
 
-:- set_prolog_flag(opt_debug,filter).
+:- set_prolog_flag(dmsg_level,filter).
 % :- set_prolog_flag(dmsg_color,false).
 
 :- dynamic(double_quotes_was/1).

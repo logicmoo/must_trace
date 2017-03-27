@@ -66,6 +66,7 @@
 
 
 :- ensure_loaded(library(debug)).
+:- use_module(library(dmsg)).
 
 
 %= 	 	 
@@ -123,13 +124,17 @@ dumpST0(Frame,MaxDepth):- ignore(MaxDepth=5000),Term = dumpST(MaxDepth),
 %
 dumpST:- notrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame),dumpST1)).
 
+
+:- thread_local(tlbugger:no_slow_io/0).
+:- multifile(tlbugger:no_slow_io/0).
+
 %= 	 	 
 
 %% dumpST1 is semidet.
 %
 % Dump S True Stucture Secondary Helper.
 %
-dumpST1:- is_hiding_dmsgs,!.
+dumpST1:- current_prolog_flag(dmsg_level,never),!.
 dumpST1:- tlbugger:no_slow_io,!,dumpST0,!.
 dumpST1:- tlbugger:ifHideTrace,!.
 dumpST1:- loop_check_early(dumpST9,dumpST0).
@@ -290,6 +295,7 @@ neg1_numbervars(Out,true,ROut):-copy_term(Out,ROut),!,snumbervars(ROut,777,_).
 neg1_numbervars(Out,Start,ROut):-copy_term(Out,ROut),integer(Start),!,snumbervars(ROut,Start,_).
 neg1_numbervars(Out,safe,ROut):-copy_term(Out,ROut),safe_numbervars(ROut).
 
+if_defined_mesg_color(G,C):- current_predicate(mesg_color/2),mesg_color(G,C).
 
 %= 	 	 
 
@@ -299,14 +305,14 @@ neg1_numbervars(Out,safe,ROut):-copy_term(Out,ROut),safe_numbervars(ROut).
 %
 fdmsg1(txt(S)):-'format'(S,[]),!.
 fdmsg1(level=L):-'format'('(~q)',[L]),!.
-fdmsg1(context_module=G):- simplify_m(G,M),!,mesg_color(G,Ctrl),ansicall(Ctrl,format('[~w]',[M])),!.
+fdmsg1(context_module=G):- simplify_m(G,M),!,if_defined_mesg_color(G,Ctrl),ansicall(Ctrl,format('[~w]',[M])),!.
 fdmsg1(has_alternatives=G):- (G==false->true;'format'('*',[G])),!.
 fdmsg1(hidden=G):- (G==false->true;'format'('$',[G])),!.
-fdmsg1(goal=G):-simplify_goal_printed(G,GG),!,mesg_color(GG,Ctrl),ansicall(Ctrl,format(' ~q. ',[GG])),!.
+fdmsg1(goal=G):-simplify_goal_printed(G,GG),!,if_defined_mesg_color(GG,Ctrl),ansicall(Ctrl,format(' ~q. ',[GG])),!.
 fdmsg1(clause=[F,L]):- directory_file_path(_,FF,F),'format'('  %  ~w:~w: ',[FF,L]),!.
 fdmsg1(clause=[F,L]):- fresh_line,'format'('%  ~w:~w: ',[F,L]),!.
 fdmsg1(clause=[]):-'format'(' /*DYN*/ ',[]),!.
-fdmsg1(G):-mesg_color(G,Ctrl),ansicall(Ctrl,format(' ~q ',[G])),!.
+fdmsg1(G):- if_defined_mesg_color(G,Ctrl),ansicall(Ctrl,format(' ~q ',[G])),!.
 fdmsg1(M):-dmsg(failed_fdmsg1(M)).
 
 

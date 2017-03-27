@@ -35,6 +35,7 @@
             doall_and_fail/1,
             quietly_must/1,
             on_x_f/3,
+            
             hide_trace/1,
             block/2,
             block3/3,
@@ -144,6 +145,8 @@
 
 
           ]).
+
+:- use_module(library(dmsg)).
 
 vsubst(In,B,A,Out):-var(In),!,(In==B->Out=A;Out=In).
 vsubst(In,B,A,Out):-subst(In,B,A,Out).
@@ -500,8 +503,8 @@ with_main_input(Goal):-
     scce_orig(set_prolog_IO(In,Err,Err),Goal,set_prolog_IO(InPrev,OutPrev,ErrPrev)).
 
 
-% bugger_debug=false turns off just debugging about the debugger
-% opt_debug=false turns off all the rest of debugging
+% bugger_debug=never turns off just debugging about the debugger
+% dmsg_level=never turns off all the rest of debugging
 % ddmsg(_):-current_prolog_flag(bugger_debug,false),!.
 % ddmsg(D):- current_predicate(_:wdmsg/1),wdmsg(D),!.
 
@@ -630,6 +633,7 @@ show_new_src_location(FL):-input_key(K),show_new_src_location(K,FL).
 %
 % Show New Src Location.
 %
+show_new_src_location(_,F:_):-F==user_input,!.
 show_new_src_location(K,FL):- t_l:last_src_loc(K,FL),!.
 show_new_src_location(K,FL):- retractall(t_l:last_src_loc(K,_)),format_to_error('~N% ~w ',[FL]),!,asserta(t_l:last_src_loc(K,FL)).
 
@@ -651,6 +655,9 @@ sl_to_filename(mfl(_,F,_),F):-atom(F),!.
 sl_to_filename(W,W).
 sl_to_filename(W,To):-nonvar(To),To=(W:_),atom(W),!.
 
+
+
+                 
 
 
 %=
@@ -765,16 +772,15 @@ source_variables_l(AllS):-
 %=
 
 
-:-export( show_source_location/0).
-%show_source_location:- quietly((tlbugger:no_slow_io)),!.
-%show_source_location:- is_hiding_dmsgs,!.
 
-%=
 
 %% show_source_location is semidet.
 %
 % Show Source Location.
 %
+:-export( show_source_location/0).
+show_source_location:- current_prolog_flag(dmsg_level,never),!.
+%show_source_location:- quietly((tlbugger:no_slow_io)),!.
 show_source_location:- source_location(F,L),!,show_new_src_location(F:L),!.
 show_source_location:- current_source_file(FL),sanity(nonvar(FL)),!,show_new_src_location(FL),!.
 show_source_location:- dumpST,dtrace.

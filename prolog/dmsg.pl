@@ -13,7 +13,6 @@
 % File: /opt/PrologMUD/pack/logicmoo_base/prolog/logicmoo/util/logicmoo_util_dmsg.pl
 :- module(dmsg,
           [ ansi_control_conv/2,
-            always_show_dmsg/0,
             with_output_to_each/2,
             ansicall/2,
             ansicall/3,
@@ -21,8 +20,9 @@
             ansicall1/3,
             ansifmt/2,
             ansifmt/3,
-            is_hiding_dmsgs/0,
+            
             colormsg/2,
+            mesg_color/2,
             contains_atom/2,
             contrasting_color/2,
             defined_message_color/2,
@@ -77,7 +77,6 @@
           matches_term/2,
           matches_term0/2,
             mesg_arg1/2,
-            mesg_color/2,
             msg_to_string/2,
             next_color/1,
             portray_clause_w_vars/1,
@@ -145,6 +144,7 @@ dmsg000/1,
         with_show_dmsg(?, 0).
 
 :- meta_predicate if_defined_local(:,0).
+if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 
 :- module_transparent
         ansi_control_conv/2,
@@ -195,7 +195,7 @@ dmsg000/1,
         is_tty/1,
         last_used_fg_color/1,
         mesg_arg1/2,
-        mesg_color/2,
+        
         msg_to_string/2,
         next_color/1,
         portray_clause_w_vars/1,
@@ -276,7 +276,6 @@ with_output_to_each(Output,Goal):-
 % = :- meta_predicate(with_show_dmsg(*,0)).
 
 
-:- thread_local(tlbugger:tl_always_show_dmsg/0).
 
 %= 	 	 
 
@@ -284,10 +283,9 @@ with_output_to_each(Output,Goal):-
 %
 % Using All (debug)message.
 %
-with_all_dmsg(Gaol):-
-   locally(tlbugger:tl_always_show_dmsg,
-     locally(set_prolog_flag(opt_debug,true),
-       locally( tlbugger:dmsg_match(show,_),Gaol))).
+with_all_dmsg(Goal):-
+   locally(set_prolog_flag(dmsg_level,always),     
+       locally( tlbugger:dmsg_match(show,_),Goal)).
 
 
 
@@ -297,9 +295,9 @@ with_all_dmsg(Gaol):-
 %
 % Using Show (debug)message.
 %
-with_show_dmsg(TypeShown,Gaol):-
-  locally(set_prolog_flag(opt_debug,filter),
-     locally( tlbugger:dmsg_match(showing,TypeShown),Gaol)).
+with_show_dmsg(TypeShown,Goal):-
+  locally(set_prolog_flag(dmsg_level,always),
+     locally( tlbugger:dmsg_match(showing,TypeShown),Goal)).
 
 % = :- meta_predicate(with_no_dmsg(0)).
 
@@ -309,8 +307,9 @@ with_show_dmsg(TypeShown,Gaol):-
 %
 % Using No (debug)message.
 %
-with_no_dmsg(Gaol):- always_show_dmsg,!,Gaol.
-with_no_dmsg(Gaol):-locally(set_prolog_flag(opt_debug,false),Gaol).
+
+ % with_no_dmsg(Goal):- current_prolog_flag(dmsg_level,always),!,Goal.
+with_no_dmsg(Goal):-locally(set_prolog_flag(dmsg_level,never),Goal).
 
 %= 	 	 
 
@@ -318,8 +317,9 @@ with_no_dmsg(Gaol):-locally(set_prolog_flag(opt_debug,false),Gaol).
 %
 % Using No (debug)message.
 %
-with_no_dmsg(TypeUnShown,Gaol):-locally(set_prolog_flag(opt_debug,filter),
-  locally( tlbugger:dmsg_match(hidden,TypeUnShown),Gaol)).
+with_no_dmsg(TypeUnShown,Goal):-
+ locally(set_prolog_flag(dmsg_level,filter),
+  locally( tlbugger:dmsg_match(hidden,TypeUnShown),Goal)).
 
 % dmsg_hides_message(_):- !,fail.
 
@@ -329,8 +329,8 @@ with_no_dmsg(TypeUnShown,Gaol):-locally(set_prolog_flag(opt_debug,filter),
 %
 % (debug)message Hides Message.
 %
-dmsg_hides_message(_):- current_prolog_flag(opt_debug,false),!.
-dmsg_hides_message(_):- current_prolog_flag(opt_debug,true),!,fail.
+dmsg_hides_message(_):- current_prolog_flag(dmsg_level,never),!.
+dmsg_hides_message(_):- current_prolog_flag(dmsg_level,always),!,fail.
 dmsg_hides_message(C):-  tlbugger:dmsg_match(HideShow,Matcher),matches_term(Matcher,C),!,HideShow=hidden.
 
 :- export(matches_term/2).
@@ -365,8 +365,8 @@ matches_term0(Filter,Term):- sub_term(STerm,Term),nonvar(STerm),matches_term0(Fi
 %
 % (debug)message Hide.
 %
-dmsg_hide(isValueMissing):-!,set_prolog_flag(opt_debug,false).
-dmsg_hide(Term):-set_prolog_flag(opt_debug,filter),sanity(nonvar(Term)),aina( tlbugger:dmsg_match(hidden,Term)),retractall( tlbugger:dmsg_match(showing,Term)),nodebug(Term).
+dmsg_hide(isValueMissing):-!,set_prolog_flag(dmsg_level,never).
+dmsg_hide(Term):-set_prolog_flag(dmsg_level,filter),sanity(nonvar(Term)),aina( tlbugger:dmsg_match(hidden,Term)),retractall( tlbugger:dmsg_match(showing,Term)),nodebug(Term).
 
 %= 	 	 
 
@@ -374,8 +374,8 @@ dmsg_hide(Term):-set_prolog_flag(opt_debug,filter),sanity(nonvar(Term)),aina( tl
 %
 % (debug)message Show.
 %
-dmsg_show(isValueMissing):-!,set_prolog_flag(opt_debug,true).
-dmsg_show(Term):-set_prolog_flag(opt_debug,filter),aina( tlbugger:dmsg_match(showing,Term)),ignore(retractall( tlbugger:dmsg_match(hidden,Term))),debug(Term).
+dmsg_show(isValueMissing):-!,set_prolog_flag(dmsg_level,always).
+dmsg_show(Term):-set_prolog_flag(dmsg_level,filter),aina( tlbugger:dmsg_match(showing,Term)),ignore(retractall( tlbugger:dmsg_match(hidden,Term))),debug(Term).
 
 %= 	 	 
 
@@ -520,7 +520,7 @@ tst_fmt:- make,
 %
 % Format Ansi.
 %
-fmt_ansi(Gaol):-ansicall([reset,bold,hfg(white),bg(black)],Gaol).
+fmt_ansi(Goal):-ansicall([reset,bold,hfg(white),bg(black)],Goal).
 
 
 %= 	 	 
@@ -596,7 +596,7 @@ with_output_to_stream(Stream,Goal):-
 %
 % Converted To Stderror.
 %
-to_stderror(Gaol):- get_thread_current_error(Err), with_output_to_stream(Err,Gaol).
+to_stderror(Goal):- get_thread_current_error(Err), with_output_to_stream(Err,Goal).
 
 
 
@@ -774,8 +774,8 @@ print_prepended_lines(Pre,[H|T]):-format('~N~w~w',[Pre,H]),print_prepended_lines
 % In Comment.
 %
 
-% in_cmt(Gaol):- tlbugger:no_slow_io,!,format('~N/*~n',[]),call_cleanup(Gaol,format('~N*/~n',[])).
-in_cmt(Gaol):- call_cleanup(prepend_each_line('% ',Gaol),format('~N',[])).
+% in_cmt(Goal):- tlbugger:no_slow_io,!,format('~N/*~n',[]),call_cleanup(Goal,format('~N*/~n',[])).
+in_cmt(Goal):- call_cleanup(prepend_each_line('% ',Goal),format('~N',[])).
 
 
 %= 	 	 
@@ -784,10 +784,10 @@ in_cmt(Gaol):- call_cleanup(prepend_each_line('% ',Gaol),format('~N',[])).
 %
 % Using Current Indent.
 %
-with_current_indent(Gaol):- 
+with_current_indent(Goal):- 
    get_indent_level(Indent), 
    indent_to_spaces(Indent,Space),
-   prepend_each_line(Space,Gaol).
+   prepend_each_line(Space,Goal).
 
 
 %= 	 	 
@@ -806,12 +806,42 @@ indent_to_spaces(N,Out):- N2 is N div 2, indent_to_spaces(N2,Spaces),atom_concat
 
 %= 	 	 
 
+%% mesg_color( :TermT, ?C) is semidet.
+%
+% Mesg Color.
+%
+mesg_color(_,[reset]):-tlbugger:no_slow_io,!.
+mesg_color(T,C):-var(T),!,C=[blink(slow),fg(red),hbg(black)],!.
+mesg_color(T,C):- if_defined(is_sgr_on_code(T)),!,C=T.
+mesg_color(T,C):-cyclic_term(T),!,C=reset.
+mesg_color("",C):- !,C=[blink(slow),fg(red),hbg(black)],!.
+mesg_color(T,C):- string(T),!,must(f_word(T,F)),!,functor_color(F,C).
+mesg_color([_,_,_T|_],C):-atom(T),mesg_color(T,C).
+mesg_color([T|_],C):-atom(T),mesg_color(T,C).
+mesg_color(T,C):-(atomic(T);is_list(T)), dmsg_text_to_string_safe(T,S),!,mesg_color(S,C).
+mesg_color(T,C):-not(compound(T)),term_to_atom(T,A),!,mesg_color(A,C).
+mesg_color(succeed(T),C):-nonvar(T),mesg_color(T,C).
+% mesg_color((T),C):- \+ \+ ((predicate_property(T,meta_predicate(_)))),arg(_,T,E),compound(E),!,mesg_color(E,C).
+mesg_color(=(T,_),C):-nonvar(T),mesg_color(T,C).
+mesg_color(debug(T),C):-nonvar(T),mesg_color(T,C).
+mesg_color(_:T,C):-nonvar(T),!,mesg_color(T,C).
+mesg_color(T,C):-functor_safe(T,F,_),member(F,[color,ansi]),compound(T),arg(1,T,C),nonvar(C).
+mesg_color(T,C):-functor_safe(T,F,_),member(F,[succeed,must,mpred_op_prolog]),compound(T),arg(1,T,E),nonvar(E),!,mesg_color(E,C).
+mesg_color(T,C):-functor_safe(T,F,_),member(F,[fmt0,msg]),compound(T),arg(2,T,E),nonvar(E),!,mesg_color(E,C).
+mesg_color(T,C):-predef_functor_color(F,C),mesg_arg1(T,F).
+mesg_color(T,C):-nonvar(T),defined_message_color(F,C),matches_term(F,T),!.
+mesg_color(T,C):-functor(T,F,_),!,functor_color(F,C),!.
+
+
+
+%= 	 	 
+
 %% prepend_each_line( ?Pre, :Goal) is nondet.
 %
 % Prepend Each Line.
 %
-prepend_each_line(Pre,Gaol):-
-  with_output_to_each(string(Str),Gaol)*->once(print_prepended(Pre,Str)).
+prepend_each_line(Pre,Goal):-
+  with_output_to_each(string(Str),Goal)*->once(print_prepended(Pre,Str)).
 
 :- meta_predicate if_color_debug(0).
 :- meta_predicate if_color_debug(0,0).
@@ -830,7 +860,7 @@ if_color_debug:-current_prolog_flag(dmsg_color,true).
 %
 % If Color Debug.
 %
-if_color_debug(Gaol):- if_color_debug(Gaol, true).
+if_color_debug(Goal):- if_color_debug(Goal, true).
 
 %= 	 	 
 
@@ -838,7 +868,7 @@ if_color_debug(Gaol):- if_color_debug(Gaol, true).
 %
 % If Color Debug.
 %
-if_color_debug(Gaol,UnColor):- if_color_debug->Gaol;UnColor.
+if_color_debug(Goal,UnColor):- if_color_debug->Goal;UnColor.
 
 
 
@@ -856,7 +886,6 @@ if_color_debug(Gaol,UnColor):- if_color_debug->Gaol;UnColor.
 
 :- create_prolog_flag(retry_undefined,default,[type(term),keep(true)]).
 
-if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 %= 	 	 
 
 %% dmsg( ?C) is semidet.
@@ -893,7 +922,7 @@ dmsginfo(V):-dmsg(info(V)).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(_,_):- is_hiding_dmsgs,!.
+dmsg0(_,_):- current_prolog_flag(dmsg_level,never),!.
 dmsg0(F,A):- is_sgr_on_code(F),!,dmsg(ansi(F,A)),!.
 dmsg0(F,A):- dmsg(fmt0(F,A)),!.
 
@@ -936,13 +965,6 @@ dmsg00(V):-cyclic_term(V),!,writeln(cyclic_term),flush_output,writeln(V),!.
 dmsg00(V):- catch(logicmoo_util_dumpst:simplify_goal_printed(V,VV),_,fail),!,dmsg000(VV),!.
 dmsg00(V):- dmsg000(V),!.
 
-%% always_show_dmsg is semidet.
-%
-% Always Show (debug)message.
-%
-always_show_dmsg:- thread_self_main.
-always_show_dmsg:- tlbugger:tl_always_show_dmsg.
-
 
 %% dmsg000( ?V) is semidet.
 %
@@ -962,7 +984,7 @@ dmsg000(V):-
 % (debug)message Secondary Helper.
 %
 dmsg1(V):- tlbugger:is_with_dmsg(FP),!,FP=..FPL,append(FPL,[V],VVL),VV=..VVL,once(dmsg1(VV)).
-dmsg1(_):- \+ always_show_dmsg, is_hiding_dmsgs,!.
+dmsg1(_):- current_prolog_flag(dmsg_level,never),!.
 dmsg1(V):- var(V),!,dmsg1(warn(dmsg_var(V))).
 dmsg1(NC):- cyclic_term(NC),!,dtrace,format_to_error('~N% ~q~n',[dmsg_cyclic_term_1]).
 dmsg1(NC):- tlbugger:skipDMsg,!,loop_check_early(dmsg2(NC),format_to_error('~N% ~q~n',[skipDMsg])),!.
@@ -979,7 +1001,7 @@ dmsg1(V):- locally(tlbugger:skipDMsg,((once(dmsg2(V)), ignore((tlbugger:dmsg_hoo
 dmsg2(NC):- cyclic_term(NC),!,format_to_error('~N% ~q~n',[dmsg_cyclic_term_2]).
 dmsg2(NC):- var(NC),!,format_to_error('~N% DMSG VAR ~q~n',[NC]).
 dmsg2(skip_dmsg(_)):-!.
-%dmsg2(C):- \+ always_show_dmsg, dmsg_hides_message(C),!.
+%dmsg2(C):- \+ current_prolog_flag(dmsg_level,always), dmsg_hides_message(C),!.
 %dmsg2(trace_or_throw(V)):- dumpST(350),dmsg(warning,V),fail.
 %dmsg2(error(V)):- dumpST(250),dmsg(warning,V),fail.
 %dmsg2(warn(V)):- dumpST(150),dmsg(warning,V),fail.
@@ -1120,19 +1142,6 @@ debugm(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
 
 
 
-% = :- export(colormsg/2).
-
-:- dynamic(is_hiding_dmsgs).
-
-%= 	 	 
-
-%% is_hiding_dmsgs is semidet.
-%
-% If Is A Hiding (debug)messages.
-%
-is_hiding_dmsgs:- \+always_show_dmsg, current_prolog_flag(opt_debug,false),!.
-is_hiding_dmsgs:- \+always_show_dmsg, tlbugger:ifHideTrace,!.
-
 %% colormsg( ?Ctrl, ?Msg) is semidet.
 %
 % Colormsg.
@@ -1148,7 +1157,7 @@ colormsg(Ctrl,Msg):- ansicall(Ctrl,fmt0(Msg)).
 %
 % Ansicall.
 %
-ansicall(Ctrl,Gaol):- notrace((current_output(Out), ansicall(Out,Ctrl,Gaol))).
+ansicall(Ctrl,Goal):- notrace((current_output(Out), ansicall(Out,Ctrl,Goal))).
 
 
 %= 	 	 
@@ -1182,16 +1191,16 @@ is_tty(Out):- not(tlbugger:no_colors), \+ tlbugger:no_slow_io, is_stream(Out),st
 %
 % Ansicall.
 %
-ansicall(Out,_,Gaol):- \+ is_tty(Out),!,Gaol.
-ansicall(_Out,_,Gaol):- tlbugger:skipDumpST9,!,Gaol.
+ansicall(Out,_,Goal):- \+ is_tty(Out),!,Goal.
+ansicall(_Out,_,Goal):- tlbugger:skipDumpST9,!,Goal.
 
 % in_pengines:- if_defined_local(relative_frame(source_context_module,pengines,_)).
 
-ansicall(_,_,Gaol):-tlbugger:no_slow_io,!,Gaol.
-ansicall(Out,CtrlIn,Gaol):- once(ansi_control_conv(CtrlIn,Ctrl)),  CtrlIn\=Ctrl,!,ansicall(Out,Ctrl,Gaol).
-ansicall(_,_,Gaol):- if_defined_local(in_pengines,fail),!,Gaol.
-ansicall(Out,Ctrl,Gaol):-
-   retractall(tlbugger:last_used_color(_)),asserta(tlbugger:last_used_color(Ctrl)),ansicall0(Out,Ctrl,Gaol),!.
+ansicall(_,_,Goal):-tlbugger:no_slow_io,!,Goal.
+ansicall(Out,CtrlIn,Goal):- once(ansi_control_conv(CtrlIn,Ctrl)),  CtrlIn\=Ctrl,!,ansicall(Out,Ctrl,Goal).
+ansicall(_,_,Goal):- if_defined_local(in_pengines,fail),!,Goal.
+ansicall(Out,Ctrl,Goal):-
+   retractall(tlbugger:last_used_color(_)),asserta(tlbugger:last_used_color(Ctrl)),ansicall0(Out,Ctrl,Goal),!.
 
 
 %= 	 	 
@@ -1200,9 +1209,9 @@ ansicall(Out,Ctrl,Gaol):-
 %
 % Ansicall Primary Helper.
 %
-ansicall0(Out,[Ctrl|Set],Gaol):-!, ansicall0(Out,Ctrl,ansicall0(Out,Set,Gaol)).
-ansicall0(_,[],Gaol):-!,Gaol.
-ansicall0(Out,Ctrl,Gaol):-if_color_debug(ansicall1(Out,Ctrl,Gaol),keep_line_pos_w_w(Out, Gaol)).
+ansicall0(Out,[Ctrl|Set],Goal):-!, ansicall0(Out,Ctrl,ansicall0(Out,Set,Goal)).
+ansicall0(_,[],Goal):-!,Goal.
+ansicall0(Out,Ctrl,Goal):-if_color_debug(ansicall1(Out,Ctrl,Goal),keep_line_pos_w_w(Out, Goal)).
 
 
 %= 	 	 
@@ -1211,19 +1220,19 @@ ansicall0(Out,Ctrl,Gaol):-if_color_debug(ansicall1(Out,Ctrl,Gaol),keep_line_pos_
 %
 % Ansicall Secondary Helper.
 %
-ansicall1(Out,Ctrl,Gaol):-
+ansicall1(Out,Ctrl,Goal):-
    notrace((must(sgr_code_on_off(Ctrl, OnCode, OffCode)),!,
      keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OnCode]))),
-	call_cleanup(Gaol,
+	call_cleanup(Goal,
            keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OffCode])))))).
 /*
-ansicall(S,Set,Gaol):-
+ansicall(S,Set,Goal):-
      call_cleanup((
          stream_property(S, tty(true)), current_prolog_flag(color_term, true), !,
 	(is_list(Ctrl) ->  maplist(sgr_code_on_off, Ctrl, Codes, OffCodes),
           atomic_list_concat(Codes, (';'), OnCode) atomic_list_concat(OffCodes, (';'), OffCode) ;   sgr_code_on_off(Ctrl, OnCode, OffCode)),
         keep_line_pos_w_w(S, (format(S,'\e[~wm', [OnCode])))),
-	call_cleanup(Gaol,keep_line_pos_w_w(S, (format(S, '\e[~wm', [OffCode]))))).
+	call_cleanup(Goal,keep_line_pos_w_w(S, (format(S, '\e[~wm', [OffCode]))))).
 
 
 */
@@ -1263,35 +1272,6 @@ tlbugger:term_color0(assertz,hfg(green)).
 tlbugger:term_color0(ainz,hfg(green)).
 tlbugger:term_color0(aina,hfg(green)).
 tlbugger:term_color0(mpred_op,hfg(blue)).
-
-
-%= 	 	 
-
-%% mesg_color( :TermT, ?C) is semidet.
-%
-% Mesg Color.
-%
-mesg_color(_,[reset]):-tlbugger:no_slow_io,!.
-mesg_color(T,C):-var(T),!,C=[blink(slow),fg(red),hbg(black)],!.
-mesg_color(T,C):-is_sgr_on_code(T),!,C=T.
-mesg_color(T,C):-cyclic_term(T),!,C=reset.
-mesg_color("",C):- !,C=[blink(slow),fg(red),hbg(black)],!.
-mesg_color(T,C):- string(T),!,must(f_word(T,F)),!,functor_color(F,C).
-mesg_color([_,_,_T|_],C):-atom(T),mesg_color(T,C).
-mesg_color([T|_],C):-atom(T),mesg_color(T,C).
-mesg_color(T,C):-(atomic(T);is_list(T)), dmsg_text_to_string_safe(T,S),!,mesg_color(S,C).
-mesg_color(T,C):-not(compound(T)),term_to_atom(T,A),!,mesg_color(A,C).
-mesg_color(succeed(T),C):-nonvar(T),mesg_color(T,C).
-% mesg_color((T),C):- \+ \+ ((predicate_property(T,meta_predicate(_)))),arg(_,T,E),compound(E),!,mesg_color(E,C).
-mesg_color(=(T,_),C):-nonvar(T),mesg_color(T,C).
-mesg_color(debug(T),C):-nonvar(T),mesg_color(T,C).
-mesg_color(_:T,C):-nonvar(T),!,mesg_color(T,C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[color,ansi]),compound(T),arg(1,T,C),nonvar(C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[succeed,must,mpred_op_prolog]),compound(T),arg(1,T,E),nonvar(E),!,mesg_color(E,C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[fmt0,msg]),compound(T),arg(2,T,E),nonvar(E),!,mesg_color(E,C).
-mesg_color(T,C):-predef_functor_color(F,C),mesg_arg1(T,F).
-mesg_color(T,C):-nonvar(T),defined_message_color(F,C),matches_term(F,T),!.
-mesg_color(T,C):-functor(T,F,_),!,functor_color(F,C),!.
 
 
 
@@ -1433,7 +1413,7 @@ random_color([reset,M,FG,BG,font(Font)]):-Font is random(8),
 %
 % Tst Color.
 %
-tst_color:- make, ignore((( between(1,20,_),random_member(Gaol,[colormsg(C,cm(C)),dmsg(color(C,dm(C))),ansifmt(C,C)]),next_color(C),Gaol,fail))).
+tst_color:- make, ignore((( between(1,20,_),random_member(Goal,[colormsg(C,cm(C)),dmsg(color(C,dm(C))),ansifmt(C,C)]),next_color(C),Goal,fail))).
 % = :- export(tst_color/1).
 
 %= 	 	 
@@ -1472,6 +1452,7 @@ contrasting_color(default,default).
 contrasting_color(_,default).
 
 :- thread_local(ansi_prop/2).
+
 
 
 %= 	 	 
