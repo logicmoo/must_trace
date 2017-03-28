@@ -62,7 +62,8 @@ on_x_debug(Goal):-
  notrace(((tracing;t_l:rtracing),maybe_leash(+exception))) 
   -> Goal
    ;
-   catchv(Goal,E,(rtrace_break(Goal),throw(E))).
+   (catchv(Goal,E,(ignore(debugCallWhy(on_x_debug(E,Goal),Goal)),throw(E)))).
+   
 
 
 %! maybe_leash( +Flags) is det.
