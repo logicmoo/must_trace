@@ -2093,8 +2093,8 @@ real_builtin_predicate(G):- \+ predicate_property(G,defined),!,fail.
 %real_builtin_predicate(G):- strip_module(G,_,GS),predicate_property(system:GS,BI),BI==built_in,!.
 real_builtin_predicate(G):-    \+ predicate_property(G,dynamic),
    predicate_property(G,BI),BI==built_in,
-   get_functor(G,F),
-   (if_defined(mpred_isa(F,prologBuiltin),fail);if_defined(baseKB:mpred_isa(F,prologBuiltin),fail)),
+   get_functor(G,F,A),
+   if_defined(baseKB:mpred_prop(F,A,prologBuiltin),fail),
    !.
 
 

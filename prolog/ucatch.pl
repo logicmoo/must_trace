@@ -1431,7 +1431,7 @@ one_must(MCall,OnFail):-  MCall *->  true ; OnFail.
 %
 % Must Be Successfull Deterministic.
 %
-must_det_u(Goal):- ignore(must(Goal)),!.
+must_det_u(Goal):- Goal->true;ignore(rtrace(Goal)).
 
 
 %=
