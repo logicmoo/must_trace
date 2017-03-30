@@ -210,7 +210,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         must_det_l_pred(1,+),
         call_must_det(1,+),
         call_each(*,+),
-        p_call(+,+),
+        p_call(*,+),
 
         must_l(0),
         one_must(0, 0),
@@ -1468,17 +1468,20 @@ must_det_l_pred(Pred,Rest):- call_each(call_must_det(Pred),Rest).
 
 call_must_det(Pred,Arg):-must_det_u(call(Pred,Arg)).
 
-call_each(Pred,Goal):-strip_module(Goal,_,P),var(P),trace_or_throw(var_must_det_l_pred(Pred,Goal)),!.
-call_each(Pred,[Goal]):- !, dmsg(trace_syntax(call_each(Pred,[Goal]))),!,p_call(Pred,Goal).
-call_each(Pred,[Goal|List]):- !, dmsg(trace_syntax(call_each(Pred,[Goal|List]))), !, p_call(Pred,Goal),!,call_each(Pred,List).
+is_call_var(Goal):- strip_module(Goal,_,P),var(P).
+
+call_each(Pred,Goal):- (is_call_var(Pred);is_call_var(Goal)),!,trace_or_throw(var_call_each(Pred,Goal)),!.
+call_each(Pred,[Goal]):- !, dmsg(trace_syntax(call_each(Pred,[Goal]))),!,call_each(Pred,Goal).
+call_each(Pred,[Goal|List]):- !, dmsg(trace_syntax(call_each(Pred,[Goal|List]))), !, call_each(Pred,Goal),!,call_each(Pred,List).
 % call_each(Pred,Goal):-tlbugger:skip_bugger,!,p_call(Pred,Goal).
-call_each(Pred,M:(Goal,List)):-!, p_call(Pred,M:Goal),!,call_each(Pred,M:List).
-call_each(Pred,(Goal,List)):-!,p_call(Pred,Goal),!,call_each(Pred,List).
+call_each(Pred,M:(Goal,List)):-!, call_each(Pred,M:Goal),!,call_each(Pred,M:List).
+call_each(Pred,(Goal,List)):- !, call_each(Pred,Goal),!,call_each(Pred,List).
 call_each(Pred,Goal):- p_call(Pred,Goal),!.
 
-p_call(Pred,_:M:Goal):-!,p_call(Pred,M:Goal).
-p_call([Pred],Goal):-!,call(Pred,Goal).
-p_call([Pred1|PredS],Goal):-!,p_call(PredS,call(Pred1,Goal)).
+% p_call(Pred,_:M:Goal):-!,p_call(Pred,M:Goal).
+p_call([Pred1|PredS],Goal):-!,p_call(Pred1,Goal),p_call(PredS,Goal).
+p_call((Pred1,PredS),Goal):-!,p_call(Pred1,Goal),p_call(PredS,Goal).
+p_call((Pred1;PredS),Goal):-!,p_call(Pred1,Goal);p_call(PredS,Goal).
 p_call(Pred,Goal):-call(Pred,Goal).
 
 must_find_and_call(G):-must(G).

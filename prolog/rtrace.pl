@@ -151,7 +151,7 @@ user:prolog_exception_hook(error(_, _),_, _, _) :-
 %
 % But also may be break when excpetions are raised during Goal.
 %
-quietly(Goal):- (notrace(tracing;t_l:rtracing),notrace)->each_call_cleanup(notrace,Goal,trace);Goal.
+quietly(Goal):- tracing -> redo_call_cleanup(notrace,Goal,trace); Goal.
 :- '$set_predicate_attribute'(quietly(_), hide_childs, 1).
 :- '$set_predicate_attribute'(quietly(_), trace, 0).
 
@@ -161,9 +161,13 @@ quietly(Goal):- (notrace(tracing;t_l:rtracing),notrace)->each_call_cleanup(notra
 %
 % Start RTracer.
 %
-rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; ((notrace,assert(t_l:rtracing),push_tracer,      
-      push_guitracer,set_prolog_flag(gui_tracer,false),visible(+all),visible(+exception),
-      maybe_leash(-all),maybe_leash(+exception),debug,trace))).
+
+rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; 
+   ((notrace,assert(t_l:rtracing),push_tracer,      
+      push_guitracer,set_prolog_flag(gui_tracer,false),
+      visible(+all),visible(+exception),
+      maybe_leash(-all),
+      maybe_leash(+exception),debug,trace))).
 
 :- '$set_predicate_attribute'(rtrace, trace, 0).
 :- '$set_predicate_attribute'(rtrace, hide_childs, 1).
@@ -183,10 +187,15 @@ srtrace:- notrace, set_prolog_flag(access_level,system), rtrace.
 %
 % Stop Tracer.
 %
-nortrace:- notrace,pop_guitracer,maybe_leash(-all),maybe_leash(+all),visible(+all),visible(+exception),maybe_leash(+exception),
-  (retract(t_l:rtracing)->pop_tracer;true),!.
+stop_rtrace:- 
+  notrace,
+  ignore(pop_guitracer),
+  leash(+all),
+  visible(+all),
+  retractall(t_l:rtracing),
+  !.
 
-stop_rtrace:- ignore(retract(tl_rtrace:rtracing)),visible(+all),visible(+exception),maybe_leash(+all),maybe_leash(+exception).
+nortrace:- stop_rtrace,ignore(pop_tracer).
 
 :- '$set_predicate_attribute'(nortrace, trace, 0).
 :- '$set_predicate_attribute'(nortrace, hide_childs, 1).
