@@ -31,8 +31,8 @@
 
 :- set_module(class(library)).
 
-:- use_module(library(debug)).
-
+:- reexport(library(debug),[debug/3]).
+ 
 % TODO Make a speed,safety,debug Triangle instead of these flags
 :- create_prolog_flag(runtime_must,debug,[]).
 
