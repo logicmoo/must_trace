@@ -1031,6 +1031,7 @@ dmsg3(C):-dmsg4(C),!.
 %
 % Dmsg4.
 %
+dmsg4(_):- current_prolog_flag(dmsg_level,never),!.
 dmsg4(_):- notrace(show_source_location),fail.
 dmsg4(Msg):-dmsg5(Msg).
 

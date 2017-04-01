@@ -1697,8 +1697,8 @@ ge_expand_goal(G,GO):- expand_goal(G,GO).
 % ge_must_sanity(must(Goal),GoalO):-ge_expand_goal(Goal,GoalO).
 % ge_must_sanity(find_and_call(Goal),GoalO):-ge_expand_goal(Goal,GoalO).
 
-ge_must_sanity(sanity(Goal),nop(sanity(GoalO))):-ge_expand_goal(Goal,GoalO).
-ge_must_sanity(must(Goal),(GoalO*->true;debugCallWhy(failed_must(Goal,FL),GoalO))):- source_ctx(FL),ge_expand_goal(Goal,GoalO).
+% ge_must_sanity(sanity(Goal),nop(sanity(GoalO))):- ge_expand_goal(Goal,GoalO).
+% ge_must_sanity(must(Goal),(GoalO*->true;debugCallWhy(failed_must(Goal,FL),GoalO))):- source_ctx(FL),ge_expand_goal(Goal,GoalO).
 
 ge_must_sanity(P,O):- P=..[F,Arg],nonvar(Arg),ge_must_sanity(F,Arg,O).
 

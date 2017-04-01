@@ -816,6 +816,7 @@ bad_idea:- current_prolog_flag(bad_idea,true).
 %
 % Wdmsg.
 %
+wdmsg(_):- current_prolog_flag(dmsg_level,never),!.
 wdmsg(X):- quietly(show_source_location),
    quietly(with_all_dmsg(dmsg(X))),!.
 
@@ -825,6 +826,7 @@ wdmsg(X):- quietly(show_source_location),
 %
 % Wdmsg.
 %
+wdmsg(_,_):- current_prolog_flag(dmsg_level,never),!.
 wdmsg(F,X):- quietly(ignore(with_all_dmsg(dmsg(F,X)))),!.
 
 
