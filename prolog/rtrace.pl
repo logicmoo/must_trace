@@ -164,6 +164,7 @@ quietly(Goal):- tracing -> redo_call_cleanup(notrace,Goal,trace); Goal.
 
 rtrace:- (notrace(t_l:rtracing) -> (visible(+all),trace) ; 
    ((notrace,assert(t_l:rtracing),push_tracer,      
+      set_prolog_flag(access_level,system),
       push_guitracer,set_prolog_flag(gui_tracer,false),
       visible(+all),visible(+exception),
       maybe_leash(-all),

@@ -37,8 +37,8 @@
             on_x_f/3,
             
             hide_trace/1,
-            block/2,
-            block3/3,
+            (block)/2,
+            (block3)/3,
             with_current_why/2,
             %bubbled_ex/1,
             %bubbled_ex_check/1,
@@ -240,7 +240,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         as_clause_w_m/5,
         bad_functor/1,
         badfood/1,
-        block/2,
+        (block)/2,
         %bubbled_ex/1,
         %bubbled_ex_check/1,
         current_source_file/1,
@@ -1054,7 +1054,7 @@ block(Name, Goal) :-  block3(Name, Goal, Var),  (   Var == !  ->  !  ;   true  )
 
 :- export((block3/3,
             set_block_exit/2,
-            block/2,
+            (block)/2,
             !/1 )).
 
 :- dynamic(buggerFile/1).
