@@ -234,11 +234,11 @@ if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
 
 :- set_module(class(library)).
 
-:- system:use_module(library(memfile)).
-:- system:use_module(first).
-%:- system:ensure_loaded(logicmoo_util_rtrace).
-:- system:ensure_loaded(library(with_thread_local)).
-%:- system:ensure_loaded(logicmoo_util_loop_check).
+:- user:use_module(library(memfile)).
+:- user:use_module(first).
+%:- user:ensure_loaded(logicmoo_util_rtrace).
+:- user:ensure_loaded(library(with_thread_local)).
+%:- user:ensure_loaded(logicmoo_util_loop_check).
 
 
 

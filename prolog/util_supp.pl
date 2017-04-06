@@ -41,7 +41,7 @@ end_of_file.
       call_cleanup_each(0,0).
 
 :- if(\+ current_predicate(system:nop/1)).
-:- system:ensure_loaded(system:logicmoo_util_supp).
+:- user:ensure_loaded(logicmoo_util_supp).
 :- endif.
 
 

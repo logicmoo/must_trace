@@ -173,7 +173,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 
 /*
 :- if(\+ current_predicate(system:nop/1)).
-:- system:ensure_loaded(system:logicmoo_util_supp).
+:- user:ensure_loaded(logicmoo_util_supp).
 :- endif.
 */
 
