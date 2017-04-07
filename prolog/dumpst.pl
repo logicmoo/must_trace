@@ -43,7 +43,7 @@
 
 
 :- use_module(library(ucatch)).
-:- use_module(library(xlisting)).
+% :- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
 :- use_module(library(rtrace)).
 :- use_module(library(must_trace)).

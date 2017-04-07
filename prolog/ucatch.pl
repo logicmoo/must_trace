@@ -1674,12 +1674,14 @@ get_must(Goal,CGoal):-
 
 :- thread_self_main.
 :- save_streams.
-:- initialization(save_streams).
+:- initialization(save_streams,now).
+:- initialization(save_streams,after_load).
 :- initialization(save_streams,restore).
 
 
 :- setup_call_cleanup(true,set_main_error,notrace).
 :- initialization(set_main_error).
+:- initialization(set_main_error,after_load).
 :- initialization(set_main_error,restore).
 :- notrace.
 
