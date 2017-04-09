@@ -945,6 +945,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 :- thread_local(tlbugger:in_dmsg/1).
 :- dynamic tlbugger:dmsg_hook/1.
 :- multifile tlbugger:dmsg_hook/1.
+:- thread_local(t_l:no_kif_var_coroutines/1).
 
 
 %= 	 	 
@@ -953,7 +954,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(V):-notrace(ignore(dmsg00(V))),!.
+dmsg0(V):-notrace(locally(t_l:no_kif_var_coroutines(true),ignore(dmsg00(V)))),!.
 
 %= 	 	 
 
