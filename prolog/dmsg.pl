@@ -444,7 +444,8 @@ fmt0(X,Y):-catchvvnt((format(X,Y),flush_output_safe),E,dfmt(E:format(X,Y))).
 % Format Primary Helper.
 %
 fmt0(X):- (atomic(X);is_list(X)), dmsg_text_to_string_safe(X,S),!,format('~w',[S]),!.
-fmt0(X):- (atom(X) -> catchvvnt((format(X,[]),flush_output_safe),E,dmsg(E)) ; (lmconf:term_to_message_string(X,M) -> 'format'('~q~N',[M]);fmt_or_pp(X))).
+fmt0(X):- (atom(X) -> catchvvnt((format(X,[]),flush_output_safe),E,dmsg(E)) ; 
+  (lmconf:term_to_message_string(X,M) -> 'format'('~q~N',[M]);fmt_or_pp(X))).
 
 %= 	 	 
 
@@ -539,7 +540,7 @@ fmt_portray_clause(X):- renumbervars_prev(X,Y),!, portray_clause(Y).
 % Format Or Pretty Print.
 %
 fmt_or_pp(portray((X:-Y))):-!,fmt_portray_clause((X:-Y)),!.
-fmt_or_pp(portray(X)):-!,functor_safe(X,F,A),fmt_portray_clause((pp(F,A):-X)),!.
+fmt_or_pp(portray(X)):- !,functor_safe(X,F,A),fmt_portray_clause((pp(F,A):-X)),!.
 fmt_or_pp(X):-format('~q~N',[X]).
 
 
@@ -700,7 +701,10 @@ sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),
 %
 portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
   [variable_names(Vs),numbervars(true),
-     attributes(portray), character_escapes(true),quoted(true)|Options]))),!.
+     % attributes(portray),
+      character_escapes(true),quoted(true)|Options]))),!.
+
+
 
 %= 	 	 
 
@@ -1168,6 +1172,7 @@ colormsg(Ctrl,Msg):- ansicall(Ctrl,fmt0(Msg)).
 %
 % Ansicall.
 %
+ansicall(_,Goal):-!,Goal.
 ansicall(Ctrl,Goal):- notrace((current_output(Out), ansicall(Out,Ctrl,Goal))).
 
 
