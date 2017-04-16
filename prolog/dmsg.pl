@@ -1261,14 +1261,15 @@ ansicall(S,Set,Goal):-
 
 %% keep_line_pos_w_w( ?S, :GoalG) is semidet.
 %
-% Hook To [ansi_term:keep_line_pos_w_w/2] For Module Logicmoo_util_dmsg.
 % Keep Line Pos.
 %
 keep_line_pos_w_w(S, G) :-
-       (stream_property(S, position(Pos)) ->
-	(stream_position_data(line_position, Pos, LPos),
-        call_cleanup(G, set_stream(S, line_position(LPos)))) ; G).
+       (stream_property(S, position(Pos)),stream_position_data(line_position, Pos, LPos)) ->
+         call_cleanup(G, set_stream_line_position_safe(S, LPos)) ;
+         call(G).
 
+set_stream_line_position_safe(S,Pos):-
+  catch(set_stream(S, line_position(Pos)),E,dmsg(error(E))).
 
 :- multifile(tlbugger:term_color0/2).
 :- dynamic(tlbugger:term_color0/2).
