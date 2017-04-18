@@ -1421,7 +1421,7 @@ skipWrapper0:- is_release,!.
 %
 % One Must Be Successfull.
 %
-one_must(MCall,OnFail):-  MCall *->  true ; OnFail.
+one_must(MCall,OnFail):-  call(MCall) *->  true ; call(OnFail).
 
 
 
@@ -1431,6 +1431,7 @@ one_must(MCall,OnFail):-  MCall *->  true ; OnFail.
 %
 % Must Be Successfull Deterministic.
 %
+must_det_u(Goal):- !,maybe_notrace(Goal),!.
 must_det_u(Goal):- Goal->true;ignore(rtrace(Goal)).
 
 
@@ -1466,7 +1467,7 @@ must_det_l(Goal):- call_each(must_det_u,Goal).
 must_det_l_pred(Pred,Rest):- tlbugger:skip_bugger,!,call(Pred,Rest).
 must_det_l_pred(Pred,Rest):- call_each(call_must_det(Pred),Rest).
 
-call_must_det(Pred,Arg):-must_det_u(call(Pred,Arg)).
+call_must_det(Pred,Arg):- must_det_u(call(Pred,Arg)),!.
 
 is_call_var(Goal):- strip_module(Goal,_,P),var(P).
 

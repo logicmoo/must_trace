@@ -652,7 +652,7 @@ user:message_hook(Term, Kind, Lines):-
  (Kind= warning;Kind= error), 
  Term\=syntax_error(_), 
  backtrace(40), \+ baseKB:no_buggery, \+ tlbugger:no_buggery_tl,
- stop_rtrace,trace,
+ stop_rtrace,1trace,
   dmsg(message_hook(Term, Kind, Lines)),quietly(dumpST(10)),dmsg(message_hook(Term, Kind, Lines)),
    !,fail,
    (sleep(1.0),read_pending_codes(user_input, Chars, []), format(error_error, '~s', [Chars]),flush_output(error_error),!,Chars=[C],
