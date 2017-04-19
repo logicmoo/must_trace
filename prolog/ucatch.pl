@@ -844,7 +844,7 @@ not_ftCompound(A):- compound(A)-> is_ftVar0(A) ; true.
 %
 % If Is A Format Type Variable.
 %
-is_ftVar(V):- (var(V);is_ftVar0(V)),!.
+is_ftVar(V):- notrace(var(V);is_ftVar0(V)).
 is_ftVar0('$VAR'(_)).
 is_ftVar0('$VAR'(_,_)).
 is_ftVar0('avar'(_)).
