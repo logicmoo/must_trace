@@ -400,7 +400,7 @@ unnumbervars(X,Y):- must(notrace(unnumbervars_and_save(X,Y))).
 put_variable_names(NewVs):-  check_variable_names(NewVs,Checked),call(b_setval,'$variable_names',Checked).
 nput_variable_names(NewVs):- check_variable_names(NewVs,Checked),call(nb_setval,'$variable_names',Checked).
 
-check_variable_names(I,O):- (\+ member(free=_,I) -> O=I ; 
+check_variable_names(I,O):- (\+ (member(N=_,I),var(N)) -> O=I ; 
    (set_prolog_flag(variable_names_bad,true),trace_or_throw(bad_check_variable_names))).
 
 %= 	 	 
