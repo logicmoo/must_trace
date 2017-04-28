@@ -202,8 +202,6 @@
             tryCatchIgnore/1,
             tryHide/1,
             unlistify/2,
-            wdmsg/1,
-            wdmsg/2,
             willTrace/0,
             will_debug_else_throw/2,
             with_no_term_expansions/1,
@@ -428,8 +426,6 @@
         traceAll/0,
         tryHide/1,
         unlistify/2,
-        wdmsg/1,
-        wdmsg/2,
         willTrace/0,
         writeErrMsg/2,
         writeErrMsg/3,
@@ -805,38 +801,8 @@ bad_idea:- current_prolog_flag(bad_idea,true).
 
 %=  :- mpred_trace_childs(must(0)).
 
-:- export(wdmsg/1).
-
-
-
 
 :- ensure_loaded(dmsg).
-
-%% wdmsg( ?X) is semidet.
-%
-% Wdmsg.
-%
-wdmsg(_):- current_prolog_flag(dmsg_level,never),!.
-wdmsg(X):- quietly(show_source_location),
-   quietly(with_all_dmsg(dmsg(X))),!.
-
-
-
-%% wdmsg( ?F, ?X) is semidet.
-%
-% Wdmsg.
-%
-wdmsg(_,_):- current_prolog_flag(dmsg_level,never),!.
-wdmsg(F,X):- quietly(ignore(with_all_dmsg(dmsg(F,X)))),!.
-
-
-%% wdmsg( ?F, ?X) is semidet.
-%
-% Wdmsg.
-%
-wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
-
-
 
 
 %% prolog_call( :Goal) is semidet.
@@ -3085,8 +3051,6 @@ must_det(Level,Goal) :- Goal,
 :- unlock_predicate(system:true/0).
 :- '$set_predicate_attribute'(system:true, trace, 0).
 :- lock_predicate(system:true/0).
-:- '$hide'(wdmsg(_)).
-:- '$hide'(wdmsg(_,_)).
 
 % 
 
