@@ -245,7 +245,8 @@ restore_leash_visible:- once(rtrace('$leash_visible'(OldL1,OldV1))->('$leash'(_,
 %  total failure
 %
 
-rtrace(Goal):- !, restore_trace(each_call_cleanup(start_rtrace,Goal,stop_rtrace)).
+rtrace(Goal):- notrace(tracing),!, restore_trace(each_call_cleanup(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),notrace(stop_rtrace))).
+rtrace(Goal):- !, restore_trace(each_call_cleanup(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),notrace(stop_rtrace))).
 
 rtrace(Goal):-
   push_tracer,!,rtrace,trace,
