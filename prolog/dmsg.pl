@@ -54,9 +54,11 @@
           wdmsg/1,
           wdmsg/2,
             wdmsgl/1,
-            wdmsgl_2/2,
-            wdmsgl_3/3,
-            wdmsgl_4/3,
+            wdmsgl/2,
+            wdmsgl/3,
+            
+            
+            
 
             f_word/2,
             fg_color/2,
@@ -954,45 +956,25 @@ wdmsg(F,X):- quietly(ignore(with_all_dmsg(dmsg(F,X)))),!.
 wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 
 
-:- meta_predicate wdmsgl0(2,*).
-:- meta_predicate wdmsgl(2,*).
+:- meta_predicate wdmsgl(1,+).
+:- meta_predicate wdmsgl(+,1,+).
+
 %% wdmsgl( ?CNF) is det.
 %
 % Wdmsgl.
 %
-wdmsgl(X):- \+ \+ notrace(wdmsgl0(b_implode_varnames,X)),!.
-wdmsgl(Pred2,X):- \+ \+ notrace(wdmsgl0(Pred2,X)),!.
+wdmsgl(X):- notrace(wdmsgl(fmt9,X)),!.
+wdmsgl(With,X):- notrace(show_failure(wdmsgl('',With,X))),!.
 
-wdmsgl0(PreOP,CNF):- is_list(CNF),!,maplist(wdmsgl0(PreOP),CNF).
-wdmsgl0(PreOP,CNF):- (is_ftVar(CNF) ; \+ compound(CNF))-> 
-  (call(PreOP,CNF,NEW)-> display_form(NEW);  display_form(CNF)),!.
-
-wdmsgl0(PreOP,(C:-NF)):- call(PreOP,(C:-NF),NEW),!,display_form(NEW).
-wdmsgl0(PreOP,CNF):- CNF=..[NAME,NF],call(PreOP,(NAME:-NF),NEW),!,display_form(NEW).
-wdmsgl0(PreOP,CNF):- call(PreOP,CNF,NEW)->display_form(NEW);display_form(CNF).
-
-wdmsg20(CNF):- pp_item('',CNF),!.
-wdmsg20(NF):- must((get_functor(NF,NAME),!,must(wdmsgl_2(NAME,NF)))).
-wdmsgl_2(NAME,NF):- functor(NF,_,_),wdmsgl_3(NAME,&,NF).
-wdmsgl_3(NAME,F,NF):- b_implode_varnames(vv(NAME,F,NF)),wdmsgl_4(NAME,F,NF).
-
-%wdmsgl_4(NAME,F,NF):- is_list(NF),!,list_to_set(NF,NS),must_maplist(wdmsgl_4(NAME,F),NS).
-%wdmsgl_4(NAME,F,NF):- compound(NF),NF=..[FF,A,B],FF=F,is_ftNonvar(A),is_ftNonvar(B),!,must_maplist(wdmsgl_4(NAME,F),[A,B]).
-% wdmsgl_4(NAME,_,NF):- as_symlog(NF,NF2), with_all_dmsg(display_form(KB,NAME:-NF2)).
-wdmsgl_4(NAME,_,NF):- as_symlog(NF,NF2), with_all_dmsg(display_form(_KB,(NAME:-NF2))).
-
-%% display_form( ?KB, ?Form) is det.
-%
-% Display Form.
-%
-display_form(Form):- display_form(_KB,Form).
-display_form(KB,Form):- 
-   if_defined(demodal_sents(KB,Form,OutM),Form=OutM),
-   if_defined(local_pterm_to_sterm(OutM,Out),OutM=Out),
-   portray_clause(current_output,Out,[max_depth(0),portrayed(true)]).
+wdmsgl(NAME,With,CNF):- is_ftVar(CNF),!,call(With,NAME=CNF).
+wdmsgl(_,With,(NAME=CNF)):- !,wdmsgl(NAME,With,CNF).
+wdmsgl(NAME,With,CNF):- is_list(CNF),!,maplist(wdmsgl(NAME,With),CNF).
+wdmsgl('',With,(C:-CNF)):- call(With,(C :-CNF)),!.
+wdmsgl(NAME,With,(C:-CNF)):- call(With,(NAME: C :-CNF)),!.
+wdmsgl(NAME,With,(:-CNF)):- call(With,(NAME:-CNF)),!.
+wdmsgl(NAME,With,CNF):- call(With,NAME:-CNF),!.
 
 
-%= 	 	 
 
 %% dmsginfo( ?V) is det.
 %
