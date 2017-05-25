@@ -2438,22 +2438,25 @@ time_call(Call):-
 % Gripe Time.
 %
 
+call_for_time(Goal,ElapseCPU,ElapseWALL,Success):- 
+   statistics(cputime,StartCPU0),statistics(walltime,[StartWALL0,_]),
+   My_Starts = start(StartCPU0,StartWALL0),  
+   (Goal*->Success=true;Success=fail),
+   statistics(cputime,EndCPU),statistics(walltime,[EndWALL,_]),
+   arg(1,My_Starts,StartCPU), ElapseCPU is EndCPU-StartCPU,nb_setarg(1,My_Starts,EndCPU),
+   arg(2,My_Starts,StartWALL), ElapseWALL is  (EndWALL-StartWALL)/1000,nb_setarg(2,My_Starts,EndWALL).
+
+gripe_time(_TooLong,Goal):- current_prolog_flag(runtime_speed,0),!,Goal.
+gripe_time(_TooLong,Goal):- current_prolog_flag(runtime_debug,0),!,Goal.
+gripe_time(_TooLong,Goal):- current_prolog_flag(runtime_debug,1),!,Goal.
 % gripe_time(_TooLong,Goal):- \+ current_prolog_flag(runtime_debug,3),\+ current_prolog_flag(runtime_debug,2),!,Goal.
-gripe_time(TooLong,Goal):- statistics(cputime,StartCPU0),
-  My_StartCPU = start(StartCPU0),
-  statistics(walltime,[StartWALL,_]),
-  NeedGripe=v(no),!,
-  (Goal*->Success=true;Success=fail),
-  once((statistics(walltime,[EndWALL,_]),statistics(cputime,EndCPU),
-     (arg(1,My_StartCPU,StartCPU), ElapseCPU is EndCPU-StartCPU,nb_setarg(1,My_StartCPU,EndCPU)),
-     ((ground(NeedGripe),ElapseCPU>TooLong,nb_setarg(1,NeedGripe,_))
-        -> (wdmsg(gripe_CPUTIME(Success,warn(ElapseCPU>TooLong),Goal)))
-        ; (ElapseWALL is (EndWALL-StartWALL)/1000,
-             ((ground(NeedGripe),ElapseWALL>TooLong,nb_setarg(1,NeedGripe,_))
-                  -> wdmsg(gripe_WALLTIME(Success,warn(ElapseWALL>TooLong),cputime=ElapseCPU,Goal))
-                  ; true))))), 
-  nb_setarg(1,NeedGripe,no),
+gripe_time(TooLong,Goal):-
+ call_for_time(Goal,ElapseCPU,ElapseWALL,Success),
+ (ElapseCPU>TooLong -> wdmsg(gripe_CPUTIME(Success,warn(ElapseCPU>TooLong),Goal)) ;
+   (ElapseWALL>TooLong -> wdmsg(gripe_WALLTIME(Success,warn(ElapseWALL>TooLong),Goal,cputime=ElapseCPU)) ;
+     true)),
   Success.
+
 
 
 %% cleanup_strings is semidet.
