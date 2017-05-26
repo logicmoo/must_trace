@@ -301,6 +301,7 @@ ftrace(Goal):- restore_trace((
   ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
   ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
 
+:- use_module(library(logicmoo_util_common)).
 :- fixup_exports.
 :- '$hide'('$toplevel':save_debug).
 :- '$hide'('$toplevel':residue_vars(_,_)).

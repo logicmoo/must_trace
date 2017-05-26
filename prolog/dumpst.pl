@@ -44,7 +44,7 @@
 
 
 :- use_module(library(ucatch)).
-% :- use_module(library(xlisting)).
+:- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
 :- use_module(library(rtrace)).
 :- use_module(library(must_trace)).
@@ -620,6 +620,8 @@ dumptrace(_,C):-fmt(unused_keypress(C)),!,fail.
 % Dump Trace Ret.
 %
 dumptrace_ret(G):- notrace((leash(+all),visible(+all),visible(+unify),trace)),G.
+
+:- use_module(library(logicmoo_util_common)).
 
 :- fixup_exports.
 
