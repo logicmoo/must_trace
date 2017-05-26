@@ -43,6 +43,7 @@
   dtrace(*,0).
 
 
+:- use_module(library(logicmoo_util_common)).
 :- use_module(library(ucatch)).
 :- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
