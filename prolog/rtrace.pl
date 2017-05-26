@@ -152,7 +152,7 @@ user:prolog_exception_hook(error(_, _),_, _, _) :-
 %
 % But also may be break when excpetions are raised during Goal.
 %
-quietly(Goal):- tracing -> redo_call_cleanup(notrace,Goal,trace); Goal.
+quietly(Goal):- tracing -> scce_orig(notrace,Goal,trace); Goal.
 :- '$set_predicate_attribute'(quietly(_), hide_childs, 1).
 :- '$set_predicate_attribute'(quietly(_), trace, 0).
 
@@ -220,7 +220,7 @@ nortrace:- stop_rtrace,ignore(pop_tracer).
 % restore  Trace.
 %
 restore_trace(Goal):- !,
-  each_call_cleanup(push_tracer,Goal,pop_tracer).
+  scce_orig(push_tracer,Goal,pop_tracer).
 restore_trace0(Goal):- 
   '$leash'(OldL, OldL),'$visible'(OldV, OldV),
    scce_orig(restore_leash_visible,
@@ -245,8 +245,8 @@ restore_leash_visible:- once(rtrace('$leash_visible'(OldL1,OldV1))->('$leash'(_,
 %  total failure
 %
 
-rtrace(Goal):- notrace(tracing),!, restore_trace(each_call_cleanup(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),notrace(stop_rtrace))).
-rtrace(Goal):- !, restore_trace(each_call_cleanup(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),notrace(stop_rtrace))).
+rtrace(Goal):- notrace(tracing),!, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),notrace(stop_rtrace))).
+rtrace(Goal):- !, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),notrace(stop_rtrace))).
 
 rtrace(Goal):-
   push_tracer,!,rtrace,trace,
@@ -384,7 +384,7 @@ hotrace(Goal):-
    '$leash'(OldL, OldL),'$visible'(OldV, OldV),
    (Undo =   notrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
    (RTRACE = notrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
-   each_call_cleanup(RTRACE,(notrace,Goal),Undo).
+   scce_orig(RTRACE,(notrace,Goal),Undo).
 
 
 % :- trace(hotrace/1, -all).       
@@ -429,7 +429,7 @@ push_tracer_and_notrace:- notrace,push_tracer,notrace.
 %
 % rtrace(Goal):- hotrace(tl_rtrace:rtracing),!, Goal.
 
-% rtrace(Goal):- wdmsg(rtrace(Goal)),!, restore_trace(each_call_cleanup(rtrace,(trace,Goal),nortrace)).
+% rtrace(Goal):- wdmsg(rtrace(Goal)),!, restore_trace(scce_orig(rtrace,(trace,Goal),nortrace)).
 
 % rtrace(Goal):- notrace(tl_rtrace:rtracing),!,call(Goal).
 rtrace(Goal):- !,setup_call_cleanup(start_rtrace,call((rtrace,Goal)),notrace(stop_rtrace)).
@@ -441,7 +441,7 @@ rtrace(Goal):-
    wdmsg(rtrace(Goal)),
    (Undo =   (((notrace,ignore(retract(tl_rtrace:rtracing)),'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
    (RTRACE = ((notrace,asserta(tl_rtrace:rtracing),visible(+all),maybe_leash(-all),maybe_leash(+exception),trace))),!,
-   each_call_cleanup(RTRACE,(trace,Goal),Undo).
+   scce_orig(RTRACE,(trace,Goal),Undo).
 /*
 :- '$set_predicate_attribute'(system:call_cleanup(_,_), trace, 0).
 :- '$set_predicate_attribute'(system:call_cleanup(_,_), hide_childs, 1).
