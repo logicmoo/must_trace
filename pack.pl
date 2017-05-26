@@ -11,6 +11,7 @@ home('https://github.com/TeamSPoon/must_trace').
 requires(clause_attvars).
 requires(logicmoo_utils).
 requires(loop_check).
+requires(hook_hybrid).
 requires(with_thread_local).
 requires(xlisting).
 autoload(true).
