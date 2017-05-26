@@ -10,5 +10,8 @@ maintainer( 'TeamSPoon', 'https://github.com/TeamSPoon/' ).
 home('https://github.com/TeamSPoon/must_trace').
 requires(clause_attvars).
 requires(logicmoo_utils).
+requires(loop_check).
+requires(with_thread_local).
+requires(xlisting).
 autoload(true).
 
