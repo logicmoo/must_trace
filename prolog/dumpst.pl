@@ -576,6 +576,12 @@ dumptrace1(G):-
 
 :-meta_predicate(dumptrace(0,+)).
 
+ggtrace:-
+  leash(+all),
+  visible(+all),
+  debug,
+  maybe_leash(+exception).
+
 %= 	 	 
 
 %% dumptrace( :GoalG, +C) is semidet.

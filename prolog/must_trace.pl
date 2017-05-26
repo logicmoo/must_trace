@@ -122,8 +122,35 @@ scce_orig(Setup,Goal,Cleanup):-
       ('$sig_atomic'(Cleanup),throw(E))). 
 
 :- abolish(system:scce_orig,3).
+
+
+[debug]  ?- scce_orig( (writeln(a),trace,start_rtrace,rtrace) , (writeln(b),member(X,[1,2,3]),writeln(c)), writeln(d)).
+a
+b
+c
+d
+X = 1 ;
+a
+c
+d
+X = 2 ;
+a
+c
+d
+X = 3.
+
+
 */
 
+scce_orig(Setup0,Goal,Cleanup0):-
+  notrace((Cleanup = notrace('$sig_atomic'(Cleanup0)),Setup = notrace('$sig_atomic'(Setup0)))),
+   \+ \+ Setup, !,
+   (catch(Goal, E,(Cleanup,throw(E)))
+      *-> (notrace(tracing)->(notrace,deterministic(DET));deterministic(DET)); (Cleanup,!,fail)),
+     Cleanup,
+     (DET == true -> ! ; (true;(Setup,fail))).
+      
+/*
 scce_orig(Setup,Goal,Cleanup):-
    \+ \+ '$sig_atomic'(Setup), 
    catch( 
@@ -133,7 +160,7 @@ scce_orig(Setup,Goal,Cleanup):-
           ; (true;('$sig_atomic'(Setup),fail)))), 
       E, 
       ('$sig_atomic'(Cleanup),throw(E))). 
-
+*/
 
 :- ensure_loaded(library('first')).
 :- ensure_loaded(library('ucatch')).
