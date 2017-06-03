@@ -383,12 +383,12 @@ simplify_goal_printed(Var,Var):-var(Var),!.
 simplify_goal_printed(Var,Name):-cyclic_term(Var),!,Name=Var.
 simplify_goal_printed(Var,Name):-is_ftVar(Var),\+ current_prolog_flag(variable_names_bad,true),simplify_var_printed(Var,Name),!.
 simplify_goal_printed(Var,Var):-var(Var),!.
-simplify_goal_printed(setup_call_catcher_cleanup,sccc).
+simplify_goal_printed(setup_call_catcher_cleanup,scccu).
 simplify_goal_printed(existence_error(X,Y),existence_error(X,Y)):-nl,writeq(existence_error(X,Y)),nl,fail.
-simplify_goal_printed(setup_call_cleanup,scc).
+simplify_goal_printed(setup_call_cleanup,sccu).
 simplify_goal_printed(existence_error,'existence_error_XXXXXXXXX__\e[0m\e[1;34m%-6s\e[m\'This is text\e[0mRED__existence_error_existence_error').
-simplify_goal_printed(each_call_cleanup,scce).
-simplify_goal_printed(call_cleanup,cc).
+simplify_goal_printed(each_call_cleanup,eccu).
+simplify_goal_printed(call_cleanup,ccu).
 simplify_goal_printed(call_term_expansion(_,A,_,B,_),O):- !, simplify_goal_printed(call_term_expansion_5('...',A,'...',B,'...'),O).
 simplify_goal_printed(A,'...'(SA)):- atom(A),atom_concat('/opt/PrologMUD/pack/logicmoo_base/prolog/logicmoo/',SA,A),!.
 simplify_goal_printed(A,'...'(SA)):- atom(A),atom_concat('/home/dmiles/lib/swipl/pack/logicmoo_base/prolog/logicmoo/',SA,A),!.

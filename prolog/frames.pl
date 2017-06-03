@@ -109,7 +109,21 @@ relative_frame(Attrib,Term,Nth):- find_parent_frame_attribute(Attrib,Term,Nth,_R
 %
 % Parent Goal.
 %
-parent_goal(Goal):-  quietly((prolog_current_frame(Frame),prolog_frame_attribute(Frame,parent,PFrame),prolog_frame_attribute(PFrame,parent_goal,Goal))).
+parent_goal(Goal):- nonvar(Goal), quietly((prolog_current_frame(Frame),prolog_frame_attribute(Frame,parent,PFrame),
+  prolog_frame_attribute(PFrame,parent_goal,Goal))).
+parent_goal(Goal):- !, quietly((prolog_current_frame(Frame),prolog_frame_attribute(Frame,parent,PFrame0),
+  prolog_frame_attribute(PFrame0,parent,PFrame),
+  goals_above(PFrame,Goal))).
+
+goals_above(Frame,Goal):- prolog_frame_attribute(Frame,goal,Term),unify_goals(Goal,Term).
+goals_above(Frame,Goal):- prolog_frame_attribute(Frame,parent,PFrame), goals_above(PFrame,Goal).
+
+unify_goals(Goal,Term):- (var(Goal);var(Term)),!,Term=Goal.
+unify_goals(M:Goal,N:Term):-!, unify_goals0(Goal,Term),M=N.
+unify_goals(Goal,_:Term):-!, unify_goals0(Goal,Term).
+unify_goals(_:Goal,Term):-!, unify_goals0(Goal,Term).
+
+unify_goals0(X,X).
 
 %= 	 	 
 
