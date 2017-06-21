@@ -22,7 +22,7 @@ Wrap `nop/1` over parts of your code you do not want to quickly comment out yet 
 
 
 
-# Installation using SWI-Prolog 7.1 or later:
+# Installation using SWI-Prolog 7.5.x or later (due to duplicate transitive deps failing in earlier versions):
 
     `?- pack_install('https://github.com/TeamSPoon/must_trace.git'). `
 
