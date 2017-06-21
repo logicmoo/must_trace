@@ -475,7 +475,7 @@ all_source_file_predicates_are_transparent(File):-
 
 
 :- set_prolog_flag(backtrace_show_lines,true).
-:- set_prolog_flag(access_level,system).
+% :- set_prolog_flag(access_level,system).
 :- set_prolog_flag(backtrace_goal_depth,10). % default 3
 :- set_prolog_flag(backtrace_depth,100). % default 20
 :- set_prolog_flag(backtrace,true). % default true

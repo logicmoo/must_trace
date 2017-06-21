@@ -13,7 +13,7 @@
 :- module(dumpst,[
           getPFA/3,getPFA1/3,getPFA2/3,get_m_opt/4,fdmsg/1,fdmsg1/1,
           neg1_numbervars/3,clauseST/2,
-          % dtrace/0,
+          dtrace/0,dbreak/0,
           dtrace/1,dtrace/2,
           dumptrace/1,dumptrace/2,dumptrace0/1,dumptrace1/1,
           dumptrace_ret/1,
@@ -474,16 +474,16 @@ end_dump(GG):-compound(GG),functor(GG,F,_),atom_concat(dump,_,F),nb_setval('$hid
 % dtrace/0/1/2
 % =====================
 
-:- redefine_system_predicate(system:dtrace()).
-system:dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpST(30),abort)).
+%:- redefine_system_predicate(system:dtrace()).
+dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpST(30),abort)).
 %= 	 	 
 
 %% dtrace is semidet.
 %
 % (debug) Trace.
 %
-:- redefine_system_predicate(system:dbreak()).
-system:dbreak:- wdmsg("DUMP_BREAK/0"), (thread_self_main->dtrace(system:break);true).
+%:- redefine_system_predicate(system:dbreak()).
+dbreak:- wdmsg("DUMP_BREAK/0"), (thread_self_main->dtrace(system:break);true).
 
 :- thread_local(tlbugger:has_auto_trace/1).
 :-meta_predicate(dtrace(0)).

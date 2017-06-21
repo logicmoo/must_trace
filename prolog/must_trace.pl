@@ -31,6 +31,7 @@
 
 :- set_module(class(library)).
 :- use_module(library(logicmoo_util_common)).
+
 :- reexport(library(debug),[debug/3]).
  
 % TODO Make a speed,safety,debug Triangle instead of these flags
