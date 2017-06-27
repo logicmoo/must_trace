@@ -1768,8 +1768,6 @@ do_gc0:- set_prolog_flag(gc,true), do_gc1, set_prolog_flag(gc,false).
 do_gc1:- notrace((garbage_collect, cleanup_strings /*garbage_collect_clauses*/ /*, statistics*/
                     )).
 
-:- multifile(baseKB:is_prolog_stream/1).
-:- dynamic(baseKB:is_prolog_stream/1).
 
 
 
@@ -1782,11 +1780,14 @@ fresh_line:-current_output(Strm),fresh_line(Strm),!.
 
 
 
+% :- multifile(lmcache:is_prolog_stream/1).
+% :- dynamic(lmcache:is_prolog_stream/1).
+
 %% fresh_line( ?Strm) is semidet.
 %
 % Fresh Line.
 %
-fresh_line(Strm):-baseKB:is_prolog_stream(Strm),on_x_fail(format(Strm,'~n',[])),!.
+%fresh_line(Strm):-lmcache:is_prolog_stream(Strm),on_x_fail(format(Strm,'~n',[])),!.
 fresh_line(Strm):-on_x_fail(format(Strm,'~N',[])),!.
 fresh_line(Strm):-on_x_fail((stream_property(Strm,position('$stream_position'(_,_,POS,_))),(POS>0->nl(Strm);true))),!.
 fresh_line(Strm):-on_x_fail(nl(Strm)),!.

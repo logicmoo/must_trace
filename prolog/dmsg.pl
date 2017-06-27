@@ -838,7 +838,7 @@ mesg_color(T,C):- if_defined(is_sgr_on_code(T)),!,C=T.
 mesg_color(T,C):-cyclic_term(T),!,C=reset.
 mesg_color("",C):- !,C=[blink(slow),fg(red),hbg(black)],!.
 mesg_color(T,C):- string(T),!,must(f_word(T,F)),!,functor_color(F,C).
-mesg_color([_,_,_T|_],C):-atom(T),mesg_color(T,C).
+mesg_color([_,_,_,T|_],C):-atom(T),mesg_color(T,C).
 mesg_color([T|_],C):-atom(T),mesg_color(T,C).
 mesg_color(T,C):-(atomic(T);is_list(T)), dmsg_text_to_string_safe(T,S),!,mesg_color(S,C).
 mesg_color(T,C):-not(compound(T)),term_to_atom(T,A),!,mesg_color(A,C).
