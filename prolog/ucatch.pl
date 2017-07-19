@@ -1389,17 +1389,17 @@ flag_call0(FlagHowValue):- FlagHowValue=..[How,Flag,Value],
 % false = use this wrapper, true = code is good and avoid using this wrapper
 :- export(skipWrapper/0).
 
-% skipWrapper:-!,fail.
+% skipWrapper:-!.
 skipWrapper:- notrace((ucatch:skipWrapper0)).
 % skipWrapper:- tracing,!.
 
 skipWrapper0:- current_prolog_flag(bugger,false),!.
 skipWrapper0:- tracing, \+ tlbugger:rtracing,!.
 skipWrapper0:- tlbugger:dont_skip_bugger,!,fail.
-skipWrapper0:- flag_call(runtime_debug == true) ,!,fail.
+%skipWrapper0:- flag_call(runtime_debug true) ,!,fail.
 %skipWrapper0:- current_prolog_flag(unsafe_speedups , true) ,!.
 skipWrapper0:- tlbugger:skip_bugger,!.
-skipWrapper0:- is_release,!.
+%skipWrapper0:- is_release,!.
 %skipWrapper0:- 1 is random(5),!.
 %skipWrapper0:- tlbugger:skipMust,!.
 

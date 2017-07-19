@@ -2488,15 +2488,17 @@ cleanup_strings:-garbage_collect_atoms.
 %
 % Loading Module.
 %
-loading_module(M,use_module(U)):- if_defined(parent_goal(_:catch(M:use_module(U),_,_),_)).
-loading_module(M,ensure_loaded(U)):- if_defined(parent_goal(_:catch(M:ensure_loaded(U),_,_),_)).
-loading_module(M,consult(F)):- if_defined(parent_goal(_:'$consult_file_2'(F,M,_,_,_),_)).
-loading_module(M,source_location(F)):- source_location(F,_),source_file_property(F,module(M)).
-loading_module(M,file(F)):- prolog_load_context(file,F),source_file_property(F,module(M)).
-loading_module(M,source(F)):- prolog_load_context(source,F),source_file_property(F,module(M)).
-loading_module(M,prolog_load_context):- prolog_load_context(module,M).
-loading_module(M,stream_property(F)):- stream_property(_X,file_name(F)),source_file_property(F,module(M)).
-loading_module(M,source_context_module):- source_context_module(M).
+loading_module(M,Why):- quiently(loading_module0(M,Why)).
+
+loading_module0(M,use_module(U)):- if_defined(parent_goal(_:catch(M:use_module(U),_,_),_)).
+loading_module0(M,ensure_loaded(U)):- if_defined(parent_goal(_:catch(M:ensure_loaded(U),_,_),_)).
+loading_module0(M,consult(F)):- if_defined(parent_goal(_:'$consult_file_2'(F,M,_,_,_),_)).
+loading_module0(M,source_location(F)):- source_location(F,_),source_file_property(F,module(M)).
+loading_module0(M,file(F)):- prolog_load_context(file,F),source_file_property(F,module(M)).
+loading_module0(M,source(F)):- prolog_load_context(source,F),source_file_property(F,module(M)).
+loading_module0(M,prolog_load_context):- prolog_load_context(module,M).
+loading_module0(M,stream_property(F)):- stream_property(_X,file_name(F)),source_file_property(F,module(M)).
+loading_module0(M,source_context_module):- source_context_module(M).
 
 
 
