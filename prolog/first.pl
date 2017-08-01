@@ -185,10 +185,14 @@ alldiscontiguous:-!.
 %
 % Source Context Module.
 %
-source_context_module(M):- prolog_load_context(module, M),M\==user, \+ '$current_typein_module'(M),!.
-source_context_module(M):- '$current_typein_module'(M),M\==user,!.
-source_context_module(M):- prolog_load_context(module, M),!.
-source_context_module(CM):-'$set_source_module'(CM,CM).
+source_context_module(M):- source_context_module0(M),M\==user, \+ '$current_typein_module'(M),!.
+source_context_module(M):- source_context_module0(M),M\==user,!.
+source_context_module(M):- source_context_module0(M).
+
+source_context_module0(M):- context_module(M).
+source_context_module0(M):- prolog_load_context(module, M).
+source_context_module0(M):- '$current_typein_module'(M).
+
 
 %================================================================
 % pred tracing 

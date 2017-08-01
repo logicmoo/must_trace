@@ -2069,7 +2069,9 @@ real_builtin_predicate(G):- \+ predicate_property(G,defined),!,fail.
 real_builtin_predicate(G):-    \+ predicate_property(G,dynamic),
    predicate_property(G,BI),BI==built_in,
    get_functor(G,F,A),
-   if_defined(baseKB:mpred_prop(F,A,prologBuiltin),fail),
+   M=_,
+   %suggest_m(M),current_assertion_module(M)
+   if_defined(baseKB:mpred_prop(M,F,A,prologBuiltin),fail),
    !.
 
 

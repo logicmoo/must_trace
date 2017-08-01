@@ -700,7 +700,7 @@ current_source_location0(M,typein):- '$current_typein_module'(M).
 %
 current_why(Why):- t_l:current_local_why(Why,_),!.
 current_why(mfl(M,F,L)):- current_source_file(F:L),var(L),F= module(M),!.
-current_why(mfl(M,F,L)):- source_module(M),call(ereq,mtCycL(M)),current_source_file(F:L),!.
+current_why(mfl(M,F,L)):- source_module(M),call(ereq,mtHybrid(M)),current_source_file(F:L),!.
 current_why(mfl(M,F,L)):- call(ereq,defaultAssertMt(M)),current_source_file(F:L),!.
 
 
