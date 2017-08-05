@@ -51,7 +51,11 @@
 %
 % If :Goal fails trace it 
 %
-on_f_rtrace(Goal):-  Goal *-> true; ((nortrace,notrace,debugCallWhy(failed(on_f_rtrace(Goal)),Goal)),fail).
+
+
+% on_f_rtrace(Goal):-  Goal *-> true; ((nortrace,notrace,debugCallWhy(failed(on_f_rtrace(Goal)),Goal)),fail).
+
+on_f_rtrace(Goal):-  Goal *-> true; (rtrace(Goal),debugCallWhy(on_f_rtrace(Goal),Goal)).
 
 
 
@@ -197,7 +201,7 @@ stop_rtrace:-
   !.
 :- maybe_hide(stop_rtrace/0).
 
-nortrace:- notrace((stop_rtrace)),ignore(pop_tracer).
+nortrace:- stop_rtrace,ignore(pop_tracer).
 
 :- maybe_hide(nortrace/0).
 
