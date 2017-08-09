@@ -963,12 +963,13 @@ wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 %
 % Wdmsgl.
 %
-wdmsgl(X):- notrace(wdmsgl(fmt9,X)),!.
-wdmsgl(With,X):- notrace(show_failure(wdmsgl('',With,X))),!.
+wdmsgl(X):- wdmsgl(dmsg,X),!.
+wdmsgl(With,X):- (must((wdmsgl('',With,X)))),!.
 
 wdmsgl(NAME,With,CNF):- is_ftVar(CNF),!,call(With,NAME=CNF).
+wdmsgl(_,With,(C:-CNF)):- call(With,(C :-CNF)),!.
 wdmsgl(_,With,(NAME=CNF)):- !,wdmsgl(NAME,With,CNF).
-wdmsgl(NAME,With,CNF):- is_list(CNF),!,maplist(wdmsgl(NAME,With),CNF).
+wdmsgl(NAME,With,CNF):- is_list(CNF),!,must_maplist(wdmsgl(NAME,With),CNF).
 wdmsgl('',With,(C:-CNF)):- call(With,(C :-CNF)),!.
 wdmsgl(NAME,With,(C:-CNF)):- call(With,(NAME: C :-CNF)),!.
 wdmsgl(NAME,With,(:-CNF)):- call(With,(NAME:-CNF)),!.
@@ -1085,8 +1086,8 @@ dmsg2(Msg):- mesg_color(Msg,Ctrl),ansicall(Ctrl,dmsg3(Msg)).
 % Dmsg3.
 %
 dmsg3(C):- tlbugger:no_slow_io,!,writeln(dmsg3(C)).
-dmsg3(C):-
-  ((functor_safe(C,Topic,_),debugging(Topic,_True_or_False),logger_property(Topic,once,true),!,
+dmsg3(C):- strip_module(C,_,SM),
+  ((functor_safe(SM,Topic,_),debugging(Topic,_True_or_False),logger_property(Topic,once,true),!,
       (dmsg_log(Topic,_Time,C) -> true ; ((get_time(Time),asserta(dmsg_log(todo,Time,C)),!,dmsg4(C)))))),!.
 
 dmsg3(C):-dmsg4(C),!.

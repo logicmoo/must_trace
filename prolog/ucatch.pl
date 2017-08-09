@@ -913,7 +913,7 @@ bad_functor(L) :- arg(_,v('|','.',[],':','/'),L).
 %
 % Warn Bad Functor.
 %
-warn_bad_functor(L):-ignore((notrace(bad_functor(L)),!,dtrace,call(ddmsg(bad_functor(L))))).
+warn_bad_functor(L):-ignore((notrace(bad_functor(L)),!,dtrace,call(ddmsg(bad_functor(L))),break)).
 
 :- export(strip_f_module/2).
 
@@ -986,7 +986,8 @@ functor_catch(P,F,A):- catchv(functor(P,F,A),_,compound_name_arity(P,F,A)).
 %
 % Functor Safely Paying Attention To Corner Cases.
 %
-functor_safe(P,F,A):- catchv(functor(P,F,A),_,compound_name_arity(P,F,A)).
+functor_safe(P,F,A):- (compound(P)->compound_name_arity(P,F,A);functor(P,F,A)),sanity(warn_bad_functor(F)).
+% functor_safe(P,F,A):- catchv(functor(P,F,A),_,compound_name_arity(P,F,A)).
 % functor_safe(P,F,A):- catchv(compound_name_arity(P,F,A),_,functor(P,F,A)).
 /*
 % functor_safe(P,F,A):-var(P),A==0,compound_name_arguments(P,F,[]),!.
@@ -994,7 +995,6 @@ functor_safe(P,F,A):-var(P),A==0,!,P=F,!.
 functor_safe(P,F,A):-functor_safe0(P,F,A),!.
 functor_safe0(M:P,M:F,A):-var(P),atom(M),functor_catch(P,F,A),!,warn_bad_functor(F).
 functor_safe0(P,F,A):-var(P),strip_f_module(F,F0),functor_catch(P,F0,A),!,warn_bad_functor(F).
-functor_safe0(P,F,A):-compound(P),!,functor_safe_compound(P,F,A),warn_bad_functor(F).
 functor_safe0(P,F,0):- quietly(string(P);atomic(P)), maybe_notrace(atom_string(F,P)),warn_bad_functor(F).
 functor_safe_compound((_,_),',',2).
 functor_safe_compound([_|_],'.',2).
