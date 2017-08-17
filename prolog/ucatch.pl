@@ -459,6 +459,12 @@ find_main_eror(user_error).
 set_main_error:- thread_self_main->set_mains;true.
 
 
+current_error_stream_ucatch(Err):-
+  stream_property(Err,alias(current_error))-> true;  % when we set it
+  stream_property(Err,alias(user_error)) -> true;
+  stream_property(Err,file_no(2)).
+
+
 %=
 
 %% save_streams( ?ID) is semidet.
@@ -471,7 +477,7 @@ save_streams(ID):-
   current_input(In),asserta(lmcache:thread_current_input(ID,In)),
   thread_at_exit(retractall((lmcache:thread_current_input(ID,_)))),
   thread_at_exit(retractall((lmcache:thread_current_error_stream(ID,_)))),
-  (stream_property(Err, alias(user_error));current_error(Err)),
+  (stream_property(Err, alias(user_error));current_error_stream_ucatch(Err)),
               asserta(lmcache:thread_current_error_stream(ID,Err)).
 
 
