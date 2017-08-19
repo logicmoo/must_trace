@@ -378,15 +378,15 @@ with_current_io(Goal):-
 
 
 with_dmsg_to_main(Goal):-
-  get_main_error_stream(Err),current_error(ErrWas),Err==ErrWas,!,Goal.
+  get_main_error_stream(Err),current_error_stream(ErrWas),Err==ErrWas,!,Goal.
 with_dmsg_to_main(Goal):-
-  get_main_error_stream(Err),current_error(ErrWas),
+  get_main_error_stream(Err),current_error_stream(ErrWas),
   current_input(IN),current_output(OUT),
    locally(t_l:thread_local_error_stream(Err),
    scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
 
 with_error_to_main(Goal):-
-  get_main_error_stream(Err),current_error(ErrWas),Err=ErrWas,!,Goal.
+  get_main_error_stream(Err),current_error_stream(ErrWas),Err=ErrWas,!,Goal.
 with_error_to_main(Goal):- trace,
   get_main_error_stream(Err),get_thread_current_error(ErrWas),
   current_input(IN),current_output(OUT),

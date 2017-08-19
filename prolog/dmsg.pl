@@ -1662,7 +1662,7 @@ writeFailureLog(E,X):-
 %
 % Clauses.
 %
-cls:- shell(cls).
+cls:- ignore(catch(shell(cls),_,fail)).
 
 :- use_module(library(random)).
 %:- ensure_loaded(logicmoo_util_varnames).
