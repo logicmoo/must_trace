@@ -915,7 +915,7 @@ if_color_debug(Goal,UnColor):- if_color_debug->Goal;UnColor.
 % (debug)message.
 %
 dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(dmsg(C)))).
-dmsg(V):- locally(set_prolog_flag(retry_undefined,false), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
+dmsg(V):- locally(set_prolog_flag(retry_undefined,no), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
 %dmsg(F,A):- notrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
 
 :- system:import(dmsg/1).
@@ -926,7 +926,7 @@ dmsg(V):- locally(set_prolog_flag(retry_undefined,false), if_defined_local(dmsg0
 %
 % (debug)message.
 %
-dmsg(F,A):- locally(set_prolog_flag(retry_undefined, false),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
+dmsg(F,A):- locally(set_prolog_flag(retry_undefined, none),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
 
 
 
