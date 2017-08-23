@@ -1326,7 +1326,12 @@ show_failure(Goal):- show_failure(mpred,Goal).
 %
 % Show Success.
 %
-show_success(Why,Goal):- dcall0(Goal),debugm(Why,sc_success(Why,Goal)).
+show_success(Why,Goal):- cyclic_term(Goal),dumpST,
+ ((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
+  \+ \+ notrace(debugm(Why,sc_success(Why,Goal))))).
+show_success(Why,Goal):- dcall0(Goal), 
+ notrace((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
+  \+ \+ notrace(wdmsg(c_success(Why,Goal))))).
 
 
 

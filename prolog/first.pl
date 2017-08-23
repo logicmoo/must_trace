@@ -73,6 +73,8 @@
 
 :- thread_local(tlbugger:ifHideTrace/0).
 :- reexport(library(listing_vars)).
+:- use_module(library(lists)).
+
 
 % :- abolish(system:nop/1),asserta(system:nop(_)).
 

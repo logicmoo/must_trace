@@ -138,9 +138,10 @@ reset_tracer:- notrace(ignore((t_l:tracer_reset(Reset)->Reset;true))).
 :- maybe_hide(reset_tracer/0).
 
 
-:- multifile user:prolog_exception_hook/4.
-:- dynamic user:prolog_exception_hook/4.
-:- module_transparent user:prolog_exception_hook/4.
+:- multifile(user:prolog_exception_hook/4).
+:- dynamic(user:prolog_exception_hook/4).
+:- module_transparent(user:prolog_exception_hook/4).
+
 % Make sure interactive debugging is turned back on
 user:prolog_exception_hook(error(_, _),_, _, _) :- 
    notrace((  reset_tracer ->
@@ -380,6 +381,16 @@ end_of_file.
 end_of_file.
 end_of_file.
 end_of_file.
+
+
+
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+
 
 % File: /opt/PrologMUD/pack/logicmoo_base/prolog/logicmoo/util/logicmoo_util_rtrace.pl
 :- module(rtrace,
