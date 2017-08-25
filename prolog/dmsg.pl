@@ -1227,7 +1227,8 @@ colormsg(Ctrl,Msg):- ansicall(Ctrl,fmt0(Msg)).
 %
 % Ansicall.
 %
-ansicall(_,Goal):-!,Goal.
+
+% ansicall(_,Goal):-!,Goal.
 ansicall(Ctrl,Goal):- notrace((current_output(Out), ansicall(Out,Ctrl,Goal))).
 
 
@@ -1253,7 +1254,9 @@ ansi_control_conv(Ctrl,CtrlO):-flatten([Ctrl],CtrlO),!.
 %
 % If Is A Tty.
 %
-is_tty(Out):- not(tlbugger:no_colors), \+ tlbugger:no_slow_io, is_stream(Out),stream_property(Out,tty(true)).
+:- multifile(tlbugger:no_colors/0).
+:- thread_local(tlbugger:no_colors/0).
+is_tty(Out):- \+ tlbugger:no_colors, \+ tlbugger:no_slow_io, is_stream(Out),stream_property(Out,tty(true)).
 
 
 %= 	 	 

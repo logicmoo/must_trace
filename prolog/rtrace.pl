@@ -166,7 +166,7 @@ quietly1(_):- trace,!,notrace(fail).
 quietly2(Goal):- \+ tracing -> Goal ; (notrace,call_with_cleanup(scce_orig(notrace,Goal,trace),trace)).
 
 % version 3 
-% quietly(Goal):- !, Goal.  % for overiding
+quietly(Goal):- !, Goal.  % for overiding
 quietly(Goal):- \+ tracing -> Goal ; 
  (notrace,
   (((Goal,deterministic(YN))) *->

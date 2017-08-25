@@ -554,14 +554,6 @@ set_bugger_flag(F,V):-create_prolog_flag(F,V,[keep(true),tCol(ftTerm)]),!.
 
 
 
-:-export(on_x_fail/1).
-%% on_x_fail( :Goal) is semidet.
-%
-% If there If Is an exception in :Goal just fail
-%
-on_x_fail(Goal):- catchv(Goal,_,fail).
-
-
 :- meta_predicate(call_count(0,?)).
 call_count(C,N):-findall(C,C,L),nth1(N,L,C).
 

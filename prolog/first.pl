@@ -196,6 +196,15 @@ source_context_module0(M):- prolog_load_context(module, M).
 source_context_module0(M):- '$current_typein_module'(M).
 
 
+
+:-export(on_x_fail/1).
+%% on_x_fail( :Goal) is semidet.
+%
+% If there If Is an exception in :Goal just fail
+%
+on_x_fail(Goal):- catchv(Goal,_,fail).
+
+
 %================================================================
 % pred tracing 
 %================================================================

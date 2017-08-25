@@ -483,7 +483,11 @@ dtrace:- wdmsg("DUMP_TRACE/0"), (thread_self_main->(dumpST,rtrace);(dumpST(30),a
 % (debug) Trace.
 %
 %:- redefine_system_predicate(system:dbreak()).
-dbreak:- wdmsg("DUMP_BREAK/0"), (thread_self_main->dtrace(system:break);true).
+
+:- thread_local(t_l:no_dbreak/0).
+dbreak:- wdmsg("DUMP_BREAK/0"),dumpST,wdmsg("DUMP_BREAK/0"),
+  (t_l:no_dbreak -> wdmsg("NO__________________DUMP_BREAK/0") ;
+   (thread_self_main->(dumpST,dtrace(system:break),break);true)).
 
 :- thread_local(tlbugger:has_auto_trace/1).
 :-meta_predicate(dtrace(0)).
@@ -500,8 +504,8 @@ dtrace(G):- strip_module(G,_,dbreak),\+ thread_self_main,!.
 % dtrace(G):- notrace((tracing,notrace)),!,wdmsg(tracing_dtrace(G)),
 %   scce_orig(notrace,restore_trace((leash(+all),dumptrace_or_cont(G))),trace).
 
-dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;catch(dumptrace1(G),E,
-  handle_dumptrace_signal(G,E)),fail. %always fails
+dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;
+ catch(dumptrace1(G),E, handle_dumptrace_signal(G,E)),fail. %always fails
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
 dtrace(G):- 
