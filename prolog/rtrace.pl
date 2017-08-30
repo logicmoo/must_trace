@@ -175,6 +175,11 @@ quietly(Goal):- \+ tracing -> Goal ;
 
 
 
+deterministically_must(G):- call(call,G),deterministic(YN),true,
+  (YN==true -> true; 
+     ((wdmsg(failed_deterministically_must(G)),(break)))).
+
+
 %:- maybe_hide(quietly/1).
 
 
@@ -324,15 +329,16 @@ set_leash_vis(OldL,OldV):- '$leash'(_, OldL),'$visible'(_, OldV),!.
 :- maybe_hide(set_leash_vis/2).
 
 next_rtrace:- (nortrace;(rtrace,trace,notrace(fail))).
-:- maybe_hide(next_rtrace/0).
+:- '$hide'(next_rtrace/0).
 
-rtrace(Goal):- notrace(tracing)-> rtrace0((trace,Goal)) ; setup_call_cleanup(true,rtrace0((trace,Goal)),stop_rtrace).
 
+rtrace(Goal):- notrace(tracing)-> rtrace0((trace,Goal)) ; 
+  setup_call_cleanup(true,rtrace0((trace,Goal)),stop_rtrace).
 rtrace0(Goal):-
-  push_tracer,!,rtrace,trace,
-  ((Goal,notrace,deterministic(YN),true)*->
-    (YN == true -> pop_tracer ; next_rtrace);
-    ((notrace,pop_tracer,!,fail))).
+ setup_call_cleanup((current_prolog_flag(debug,O),rtrace),
+   (Goal,notrace,deterministic(YN),
+     (YN == true->!;next_rtrace)),
+     set_prolog_flag(debug,O)).
 
 :- maybe_hide(rtrace/1).
 :- maybe_hide(rtrace0/1).

@@ -894,6 +894,13 @@ if_color_debug(Goal,UnColor):- if_color_debug->Goal;UnColor.
 
 
 
+color_line(C,N):- 
+ notrace((
+  format('~N',[]),
+    forall(between(1,N,_),ansi_format([fg(C)],"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n",[])))).
+
+
+
 % % = :- export((portray_clause_w_vars/4,ansicall/3,ansi_control_conv/2)).
 
 :- thread_local(tlbugger:skipDumpST9/0).
@@ -914,7 +921,7 @@ if_color_debug(Goal,UnColor):- if_color_debug->Goal;UnColor.
 %
 % (debug)message.
 %
-dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(dmsg(C)))).
+dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(main_error,dmsg(C)))).
 dmsg(V):- locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
 %dmsg(F,A):- notrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
 
@@ -929,6 +936,15 @@ dmsg(V):- locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(
 dmsg(F,A):- locally(set_prolog_flag(retry_undefined, none),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
 
 
+with_output_to_main_error(G):- 
+  % stream_property(In,file_no(0)),
+  stream_property(Err,file_no(2)),
+  current_input(I),
+  current_output(O),
+   setup_call_cleanup(set_prolog_IO(I,Err,Err),
+    G,
+     set_prolog_IO(I,O,O)).
+   
 
 
 %% wdmsg( ?X) is semidet.
@@ -992,7 +1008,7 @@ dmsginfo(V):-dmsg(info(V)).
 %
 dmsg0(_,_):- current_prolog_flag(dmsg_level,never),!.
 dmsg0(F,A):- is_sgr_on_code(F),!,dmsg(ansi(F,A)),!.
-dmsg0(F,A):- dmsg(fmt0(F,A)),!.
+dmsg0(F,A):- with_output_to_main_error(dmsg(fmt0(F,A))),!.
 
 %= 	 	 
 
@@ -1022,7 +1038,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(V):-notrace(locally(t_l:no_kif_var_coroutines(true),ignore(dmsg00(V)))),!.
+dmsg0(V):-notrace(locally(t_l:no_kif_var_coroutines(true),ignore(with_output_to_main_error(dmsg00(V))))),!.
 
 %= 	 	 
 
@@ -1040,9 +1056,10 @@ dmsg00(V):- dmsg000(V),!.
 % (debug)message Primary Helper Primary Helper Primary Helper.
 %
 dmsg000(V):-
-   notrace(format(string(K),'~p',[V])),
+ with_output_to_main_error(
+   (notrace(format(string(K),'~p',[V])),
    (tlbugger:in_dmsg(K)-> dmsg5(V);  % format_to_error('~N% ~q~n',[dmsg0(V)]) ;
-      asserta(tlbugger:in_dmsg(K),Ref),call_cleanup(dmsg1(V),erase(Ref))),!.
+      asserta(tlbugger:in_dmsg(K),Ref),call_cleanup(dmsg1(V),erase(Ref))))),!.
 
 % = :- export(dmsg1/1).
 
