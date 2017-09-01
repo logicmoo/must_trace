@@ -125,9 +125,9 @@
             module_stack/2,
             must_each/1,
             must_each0/1,
-            must_maplist/2,
-            must_maplist/3,
-            must_maplist/4,
+            must_maplist_det/2,
+            must_maplist_det/3,
+            must_maplist_det/4,
             new_a2s/3,
             new_a2s0/3,
             nodebugx/1,
@@ -256,9 +256,9 @@
         on_f_log_ignore(0),
         meta_interp(:, +),
         must_each(0),
-        must_maplist(:, ?),
-        must_maplist(:, ?, ?),
-        must_maplist(:, ?, ?, ?),
+        must_maplist_det(:, ?),
+        must_maplist_det(:, ?, ?),
+        must_maplist_det(:, ?, ?, ?),
         nodebugx(0),
         once_if_ground(0),
         once_if_ground(0, -),
@@ -624,6 +624,59 @@ must_maplist(_, [], [],[]).
 must_maplist( Goal, [Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3]) :-
 	must(call(Goal, Elem1, Elem2, Elem3)),
 	must_maplist( Goal, Tail1, Tail2, Tail3).
+
+
+
+
+:- meta_predicate 
+	must_maplist_det(:, ?),
+	must_maplist_det(:, ?, ?),
+        must_maplist_det(:, ?, ?, ?).
+
+%% 	must_maplist_det(:Goal, ?List)
+%
+%	True if Goal can successfully  be   applied  on  all elements of
+%	List. Arguments are reordered to gain  performance as well as to
+%	make the predicate deterministic under normal circumstances.
+
+
+
+
+%% must_maplist_det( :PRED1Goal, ?Elem) is semidet.
+%
+% Must Be Successfull Maplist.
+%
+must_maplist_det(_, []):-!.
+must_maplist_det(Goal, [Elem|Tail]) :-
+	must(call(Goal, Elem)),!,
+	must_maplist_det(Goal, Tail).
+
+%% 	must_maplist_det(:Goal, ?List1, ?List2)
+%
+%	As must_maplist_det/2, operating on pairs of elements from two lists.
+
+
+
+%% must_maplist_det( :PRED2Goal, ?Elem1, ?Elem2) is semidet.
+%
+% Must Be Successfull Maplist.
+%
+must_maplist_det(_, [], []):-!.
+must_maplist_det( Goal, [Elem1|Tail1], [Elem2|Tail2]) :-
+	must(call(Goal, Elem1, Elem2)),!,
+	must_maplist_det( Goal, Tail1, Tail2).
+
+
+
+
+%% must_maplist_det( :PRED3Goal, ?Elem1, ?Elem2, ?Elem3) is semidet.
+%
+% Must Be Successfull Maplist.
+%
+must_maplist_det(_, [], [],[]):-!.
+must_maplist_det( Goal, [Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3]) :-
+	must(call(Goal, Elem1, Elem2, Elem3)),!,
+	must_maplist_det( Goal, Tail1, Tail2, Tail3).
 
 
 

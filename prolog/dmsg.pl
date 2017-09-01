@@ -489,15 +489,22 @@ format_to_message(Format,Args,Info):-
      format(string(Info),Format,Args);
      (format(string(Info),'~N~n~p +++++++++++++++++ ~p~n',[Format,Args])))))).
 
+
+new_line_if_needed:- flush_output,format('~N',[]),flush_output.
+
 %= 	 	 
 
 %% fmt9( ?Msg) is det.
 %
 % Fmt9.
 %
-fmt9(fmt0(F,A)):-on_x_fail(fmt0(F,A)),!.
-fmt9(Msg):- catch(((string(Msg);atom(Msg)),format(Msg,[x1,x2,x3])),_,fail),!.
-fmt9(Msg):- if_defined_local(portray_clause_w_vars(Msg),print(Msg)).
+fmt9(Msg):- new_line_if_needed, must(fmt90(Msg)),!,new_line_if_needed.
+
+fmt90(fmt0(F,A)):-on_x_fail(fmt0(F,A)).
+fmt90(Msg):- on_x_fail(((string(Msg);atom(Msg)),format(Msg,[fmt90_x1,fmt90_x2,fmt90_x3]))).
+fmt90(Msg):- on_x_fail((with_output_to(string(S),on_x_fail(if_defined_local(portray_clause_w_vars(Msg),fail))),format('~s',[S]))).
+fmt90(Msg):- on_x_fail(format('~p',[Msg])).
+fmt90(Msg):- writeq(fmt9(Msg)).
 
 % :-reexport(library(ansi_term)).
 :- use_module(library(ansi_term)).
@@ -702,15 +709,28 @@ sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),
 
 
 
+:- use_module(library(listing)).
+
 %= 	 	 
 
 %% portray_clause_w_vars( ?Out, ?Msg, ?Vs, ?Options) is det.
 %
 % Portray Clause W Variables.
 %
-portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
+
+/*
+portray_clause_w_vars(Out,Msg,Vs,Options):- fail,
+   copy_term(Msg+Vs+Options,CMsg+CVs+COptions,Goals),
+   Goals\==true, portray_clause_w_vars0(Out,CMsg+Goals,CVs,COptions).
+portray_clause_w_vars(Out,Msg,Vs,Options):- portray_clause_w_vars0(Out,Msg,Vs,Options),!.
+*/
+
+portray_clause_w_vars(Out,Msg,Vs,Options):- 
+ (if_defined_local(serialize_attvars(Msg,MsgS),Msg=MsgS)->true;Msg=MsgS),!,
+ %% Msg=MsgS,
+ \+ \+ ((prolog_listing:do_portray_clause(Out,MsgS,
   [variable_names(Vs),numbervars(true),
-     % attributes(portray),
+    %  attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
 
 
@@ -985,8 +1005,8 @@ wdmsgl(With,X):- (must((wdmsgl('',With,X)))),!.
 wdmsgl(NAME,With,CNF):- is_ftVar(CNF),!,call(With,NAME=CNF).
 wdmsgl(_,With,(C:-CNF)):- call(With,(C :-CNF)),!.
 wdmsgl(_,With,'==>'(CNF,C)):- call(With,(C :- (fwc, CNF))),!.
-wdmsgl(_,With,(NAME=CNF)):- !,wdmsgl(NAME,With,CNF).
-wdmsgl(NAME,With,CNF):- is_list(CNF),!,must_maplist(wdmsgl(NAME,With),CNF).
+wdmsgl(_,With,(NAME=CNF)):- wdmsgl(NAME,With,CNF),!.
+wdmsgl(NAME,With,CNF):- is_list(CNF),must_maplist_det(wdmsgl(NAME,With),CNF),!.
 wdmsgl('',With,(C:-CNF)):- call(With,(C :-CNF)),!.
 wdmsgl(NAME,With,(C:-CNF)):- call(With,(NAME: C :-CNF)),!.
 wdmsgl(NAME,With,(:-CNF)):- call(With,(NAME:-CNF)),!.
