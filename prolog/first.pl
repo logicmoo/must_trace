@@ -388,7 +388,9 @@ set_varname_list(VsIn):- check_variable_names(VsIn,Vs),
   duplicate_term(Vs,VsD),
   nb_linkval('$variable_names',VsD).
 
-add_var_to_env(Name,Var):- get_varname_list(VsIn),
+add_var_to_env(NameS,Var):-
+   (nonvar(NameS)->name(Name,NameS);NameS=Name),
+   get_varname_list(VsIn),
    add_var_to_list(Name,Var,VsIn,NewName,NewVar,NewVs),
    (NewName\==Name -> put_attr(Var, vn, NewName) ; true),
    (NewVar \==Var  -> put_attr(NewVar, vn, Name) ; true),
