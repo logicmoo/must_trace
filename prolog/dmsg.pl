@@ -718,19 +718,18 @@ sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),
 % Portray Clause W Variables.
 %
 
-/*
-portray_clause_w_vars(Out,Msg,Vs,Options):- fail,
-   copy_term(Msg+Vs+Options,CMsg+CVs+COptions,Goals),
-   Goals\==true, portray_clause_w_vars0(Out,CMsg+Goals,CVs,COptions).
-portray_clause_w_vars(Out,Msg,Vs,Options):- portray_clause_w_vars0(Out,Msg,Vs,Options),!.
-*/
+portray_clause_w_vars(Out,Msg,Vs,Options):- free_of_attrs(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!,portray_clause_w_vars2(Out,SMsg,SVs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- portray_clause_w_vars2(Out,Msg,Vs,Options).
+ 
+portray_clause_w_vars2(Out,Msg,Vs,Options):- free_of_attrs(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
+portray_clause_w_vars2(Out,Msg,Vs,Options):- copy_term(Msg+Vs+Options,CMsg+CVs+COptions,Goals), 
+   portray_clause_w_vars5(Out,CMsg+Goals,CVs,COptions).
 
-portray_clause_w_vars(Out,Msg,Vs,Options):- 
- (if_defined_local(serialize_attvars(Msg,MsgS),Msg=MsgS)->true;Msg=MsgS),!,
- %% Msg=MsgS,
- \+ \+ ((prolog_listing:do_portray_clause(Out,MsgS,
+portray_clause_w_vars5(Out,Msg,Vs,Options):-
+ \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
   [variable_names(Vs),numbervars(true),
-    %  attributes(ignore),
+      attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
 
 
