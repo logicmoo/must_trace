@@ -708,6 +708,9 @@ sformat(Str,Msg,Vs,Opts):- nonvar(Msg),functor_safe(Msg,':-',_),!,with_output_to
 sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),portray_clause_w_vars(CO,':-'(Msg),Vs,Opts))),append([_,_,_],PrintCodes,Codes),'sformat'(Str,'   ~s',[PrintCodes]),!.
 
 
+free_of_attrs_dmsg(Term):- var(Term),!,(get_attrs(Term,Attrs)-> Attrs==[] ; true).
+free_of_attrs_dmsg(Term):- term_attvars(Term,Vs),!,(Vs==[]->true;maplist(free_of_attrs_dmsg,Vs)).
+
 
 :- use_module(library(listing)).
 
@@ -718,11 +721,11 @@ sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),
 % Portray Clause W Variables.
 %
 
-portray_clause_w_vars(Out,Msg,Vs,Options):- free_of_attrs(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
 portray_clause_w_vars(Out,Msg,Vs,Options):- if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!,portray_clause_w_vars2(Out,SMsg,SVs,Options).
 portray_clause_w_vars(Out,Msg,Vs,Options):- portray_clause_w_vars2(Out,Msg,Vs,Options).
  
-portray_clause_w_vars2(Out,Msg,Vs,Options):- free_of_attrs(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
+portray_clause_w_vars2(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
 portray_clause_w_vars2(Out,Msg,Vs,Options):- copy_term(Msg+Vs+Options,CMsg+CVs+COptions,Goals), 
    portray_clause_w_vars5(Out,CMsg+Goals,CVs,COptions).
 
@@ -1701,7 +1704,7 @@ writeFailureLog(E,X):-
 %
 % Clauses.
 %
-cls:- ignore(catch(shell(cls),_,fail)).
+cls:- ignore(catch(system:shell(cls,0),_,fail)).
 
 :- use_module(library(random)).
 %:- ensure_loaded(logicmoo_util_varnames).

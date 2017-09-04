@@ -389,7 +389,7 @@ set_varname_list(VsIn):- check_variable_names(VsIn,Vs),
   nb_linkval('$variable_names',VsD).
 
 add_var_to_env(NameS,Var):-
-   (nonvar(NameS)->name(Name,NameS);NameS=Name),
+   ((is_list(NameS);string(NameS))->name(Name,NameS);NameS=Name),
    get_varname_list(VsIn),
    add_var_to_list(Name,Var,VsIn,NewName,NewVar,NewVs),
    (NewName\==Name -> put_attr(Var, vn, NewName) ; true),
