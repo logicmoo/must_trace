@@ -64,7 +64,7 @@ on_f_rtrace(Goal):-  Goal *-> true; (rtrace(Goal),debugCallWhy(on_f_rtrace(Goal)
 % If there If Is an exception in :Goal then rtrace.
 %
 on_x_debug(Goal):- 
- notrace(((tracing;t_l:rtracing),maybe_leash(+exception))) 
+ ((( tracing; t_l:rtracing),maybe_leash(+exception))) 
   -> Goal
    ;
    (catchv(Goal,E,(ignore(debugCallWhy(on_x_debug(E,Goal),Goal)),throw(E)))).
@@ -80,7 +80,7 @@ maybe_hide(M:P):- (current_prolog_flag(runtime_debug,N), N>1) -> true ; '$hide'(
 maybe_leash(Some):- maybe_leash->leash(Some);true.
 :- maybe_hide(maybe_leash/1).
 
-maybe_leash:- \+ non_user_console, \+ current_prolog_flag(runtime_must,keep_going).
+maybe_leash:- \+ current_prolog_flag(runtime_must,keep_going), \+ non_user_console.
 non_user_console:- \+ stream_property(current_input, tty(true)),!.
 non_user_console:- \+ stream_property(current_input,close_on_abort(false)).
 
@@ -134,7 +134,7 @@ pop_tracer:- notrace((retract(t_l:tracer_reset(Reset))->Reset;true)).
 %
 % Reset Tracer.
 %
-reset_tracer:- notrace(ignore((t_l:tracer_reset(Reset)->Reset;true))).
+reset_tracer:- ignore((t_l:tracer_reset(Reset)->Reset;true)).
 :- maybe_hide(reset_tracer/0).
 
 
@@ -143,7 +143,10 @@ reset_tracer:- notrace(ignore((t_l:tracer_reset(Reset)->Reset;true))).
 :- module_transparent(user:prolog_exception_hook/4).
 
 % Make sure interactive debugging is turned back on
-user:prolog_exception_hook(error(_, _),_, _, _) :- 
+
+user:prolog_exception_hook(error(_, _),_, _, _) :- leash(+all),fail.
+
+user:prolog_exception_hook(error(_, _),_, _, _) :- fail, 
    notrace((  reset_tracer ->
      maybe_leash ->
      t_l:rtracing ->

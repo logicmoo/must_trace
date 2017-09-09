@@ -1447,7 +1447,8 @@ shrink_clause( HB,HB).
 %
 % Set No Debug.
 %
-set_no_debug:- 
+set_no_debug:-
+  notrace,
   must_det_l((
    asserta(is_set_no_debug),
    set_prolog_flag(generate_debug_info, true),
@@ -3062,7 +3063,7 @@ disabled_this:- asserta((user:prolog_exception_hook(Exception, Exception, Frame,
 :- thread_local(tlbugger:no_buggery_tl/0).
 
 
-% :- '$hide'(maybe_leash/1).
+:- '$hide'(maybe_leash/1).
 % :- '$hide'('$syspreds':visible/1).
 % :- '$hide'('$syspreds':leash/1).
 % :- '$hide'(visible/1).

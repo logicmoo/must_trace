@@ -60,7 +60,7 @@
             fresh_line_to_err/0,
             functor_catch/3,
             functor_safe/3,
-            get_must/2,
+            
             ib_multi_transparent33/1,
             if_defined/1,if_defined/2,
             input_key/1,
@@ -258,7 +258,6 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         functor_catch/3,
         functor_safe/3,
         with_current_why/2,
-        get_must/2,
         ib_multi_transparent33/1,
         input_key/1,
         is_ftCompound/1,
@@ -1647,33 +1646,6 @@ y_must(Y,Goal):- catchv(Goal,E,(wdmsg(E:must_xI__xI__xI__xI__xI_(Y,Goal)),fail))
 
 dumpST_error(Msg):- notrace((ddmsg(error,Msg),dumpST,wdmsg(error,Msg))).
 
-%=
-
-%% get_must( ?Goal, ?CGoal) is semidet.
-%
-% Get Must Be Successfull.
-%
-%get_must(quietly(Goal),CGoal):-  fail, !,get_must(Goal,CGoal).
-get_must(M:Goal,M:CGoal):- must_be(nonvar,Goal), !,get_must(Goal,CGoal).
-get_must(quietly(Goal),CGoal):- !,get_must((quietly(Goal)*->true;Goal),CGoal).
-get_must(Goal,CGoal):-  (tlbugger:show_must_go_on; hide_non_user_console),!,
- CGoal = ((catchv(Goal,E,
-     notrace(((dumpST_error(sHOW_MUST_go_on_xI__xI__xI__xI__xI_(E,Goal)),ignore(rtrace(Goal)),badfood(Goal)))))
-            *-> true ;
-              notrace(dumpST_error(sHOW_MUST_go_on_failed_F__A__I__L_(Goal))),ignore(rtrace(Goal)),badfood(Goal))).
-
-get_must(Goal,CGoal):-  (tlbugger:skipMust),!,CGoal = Goal.
-get_must(Goal,CGoal):- !, (CGoal = (on_x_debug(Goal) *-> true; debugCallWhy(failed(on_f_debug(Goal)),Goal))).
-% get_must(Goal,CGoal):- !, CGoal = (Goal *-> true ; ((dumpST_error(failed_FFFFFFF(must(Goal))),dtrace(Goal)))).
-
-%get_must(Goal,CGoal):- !, CGoal = (catchv(Goal,E,(notrace,ddmsg(eXXX(E,must(Goal))),rtrace(Goal),dtrace,!,throw(E))) *-> true ; ((ddmsg(failed(must(Goal))),dtrace,Goal))).
-get_must(Goal,CGoal):-
-   (CGoal = (catchv(Goal,E,
-     ignore_each(((dumpST_error(must_xI_(E,Goal)), %set_prolog_flag(debug_on_error,true),
-         rtrace(Goal),nortrace,dtrace(Goal),badfood(Goal)))))
-         *-> true ; (dumpST,ignore_each(((dtrace(must_failed_F__A__I__L_(Goal),Goal),badfood(Goal))))))).
-
-:- '$hide'(get_must/2).
 
 :- thread_self_main.
 :- save_streams.

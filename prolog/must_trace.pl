@@ -35,7 +35,7 @@
 :- reexport(library(debug),[debug/3]).
  
 % TODO Make a speed,safety,debug Triangle instead of these flags
-:- create_prolog_flag(runtime_must,debug,[]).
+:- create_prolog_flag(runtime_must,debug,[type(term)]).
 
 
 %! must(:Goal) is nondet.
@@ -51,18 +51,54 @@
 %
 % Must Be Successfull.
 %
+must(Goal):- quietly(get_must(Goal,MGoal))-> call(MGoal).
 
-% must(Goal):- \+ flag_call(runtime_debug == true) ,flag_call(unsafe_speedups == true) ,!,call(Goal).
-% must(Call):- !, (repeat, (catchv(Call,E,(dmsg(E:Call),fail)) *-> true ; (ignore(rtrace(Call)),leash(+all),repeat,wdmsg(failed(Call)),trace,Call))).
+%% get_must( ?Goal, ?CGoal) is semidet.
+%
+% Get Must Be Successfull.
+%
 
-must(Goal):- skipWrapper,!, (Goal *-> true;throw(failed_must(Goal))).
-must(Goal):- current_prolog_flag(runtime_must,How),!,
-          (How == speed -> call(Goal);
-           How == debug -> on_f_rtrace(Goal);
-           How == keep_going -> ignore(on_f_rtrace(Goal));
-           on_f_rtrace(Goal)).
-must(Goal):-  get_must(Goal,MGoal),!,call(MGoal).
-must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
+get_must(Goal,CGoal):- (skipWrapper ; tlbugger:skipMust),!,CGoal = Goal.
+get_must(M:Goal,M:CGoal):- must_be(nonvar,Goal),!,get_must(Goal,CGoal).
+get_must(quietly(Goal),quietly(CGoal)):- current_prolog_flag(runtime_safety,3), !, get_must(Goal,CGoal).
+get_must(quietly(Goal),CGoal):- !,get_must((quietly(Goal)*->true;Goal),CGoal).
+get_must(Goal,CGoal):- (tlbugger:show_must_go_on),!,CGoal=must_keep_going(Goal).
+get_must(Goal,CGoal):- hide_non_user_console,!,get_must_type(rtrace,Goal,CGoal).
+get_must(Goal,CGoal):- current_prolog_flag(runtime_must,How), How \== none, !, get_must_type(How,Goal,CGoal).
+get_must(Goal,CGoal):- current_prolog_flag(runtime_debug,2), !, 
+   (CGoal = (on_x_debug(Goal) *-> true; debugCallWhy(failed(on_f_debug(Goal)),Goal))).
+get_must(Goal,CGoal):-
+   (CGoal = (catchv(Goal,E,
+     ignore_each(((dumpST_error(must_ERROR(E,Goal)), %set_prolog_flag(debug_on_error,true),
+         rtrace(Goal),nortrace,dtrace(Goal),badfood(Goal)))))
+         *-> true ; (dumpST,ignore_each(((dtrace(must_failed_F__A__I__L_(Goal),Goal),badfood(Goal))))))).
+
+
+get_must_type(speed,Goal,Goal).
+get_must_type(warning,Goal,show_failure(Goal)).
+get_must_type(rtrace,Goal,on_f_rtrace(Goal)).
+get_must_type(keep_going,Goal,must_keep_going(Goal)).
+get_must_type(retry,Goal,must_retry(Goal)).
+get_must_type(How,Goal,CGoal):- 
+     (How == assertion -> CGoal = (Goal*->true;call(prolog_debug:assertion_failed(fail, must(Goal))));
+     (How == error ; true ) 
+       -> CGoal = (Goal*-> true; throw(failed_must(Goal)))).
+
+must_retry(Call):- 
+   (repeat, (catchv(Call,E,(dmsg(E:Call),fail)) *-> true ; 
+      catch((ignore(rtrace(Call)),leash(+all),visible(+all),
+        repeat,wdmsg(failed(Call)),trace,Call,fail),'$aborted',true))).
+
+must_keep_going(Goal):- set_prolog_flag(debug_on_error,false),
+  (catch(Goal,E,
+      xnotrace(((dumpST_error(sHOW_MUST_go_on_xI__xI__xI__xI__xI_(E,Goal)),ignore(rtrace(Goal)),badfood(Goal)))))
+            *-> true ;
+              xnotrace(dumpST_error(sHOW_MUST_go_on_failed_F__A__I__L_(Goal))),ignore(rtrace(Goal)),badfood(Goal)).
+
+:- '$hide'(get_must/2).
+
+
+xnotrace(G):- G,!.
 
 %! sanity(:Goal) is det.
 %
@@ -72,14 +108,13 @@ must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
 %
 
 sanity(_):- notrace(current_prolog_flag(runtime_safety,0)),!.
-
 sanity(Goal):- \+ tracing,
    \+ current_prolog_flag(runtime_safety,3),
    \+ current_prolog_flag(runtime_debug,0),
    (current_prolog_flag(runtime_speed,S),S>1),
    !,
    (1 is random(10)-> must(Goal) ; true).
-sanity(Goal):- notrace(quietly(Goal)),!.
+sanity(Goal):- quietly(Goal),!.
 sanity(_):- dumpST,fail.
 sanity(Goal):- tlbugger:show_must_go_on,!,dmsg(show_failure(sanity,Goal)).
 sanity(Goal):- setup_call_cleanup(wdmsg(begin_FAIL_in(Goal)),rtrace(Goal),wdmsg(end_FAIL_in(Goal))),!,dtrace(assertion(Goal)).
@@ -144,7 +179,7 @@ X = 3.
 */
 
 scce_orig(Setup0,Goal,Cleanup0):-
-  notrace((Cleanup = notrace('$sig_atomic'(Cleanup0)),Setup = notrace('$sig_atomic'(Setup0)))),
+  xnotrace((Cleanup = notrace('$sig_atomic'(Cleanup0)),Setup = xnotrace('$sig_atomic'(Setup0)))),
    \+ \+ Setup, !,
    (catch(Goal, E,(Cleanup,throw(E)))
       *-> (notrace(tracing)->(notrace,deterministic(DET));deterministic(DET)); (Cleanup,!,fail)),
