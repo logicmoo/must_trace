@@ -3698,7 +3698,7 @@ get_varname_list(VsOut):- nb_current('$variable_names',Vs),!,check_variable_name
 get_varname_list([]).
 set_varname_list(VsIn):- check_variable_names(VsIn,Vs),
   b_setval('$variable_names',[]),
-  duplicate_term(Vs,VsD),
+  dupe_term(Vs,VsD),
   nb_linkval('$variable_names',VsD).
 
 add_var_to_env(NameS,Var):-
@@ -3932,7 +3932,7 @@ renumbervars1(XXM,IVs,YYM,Vs):-
 %
 % Safely Paying Attention To Corner Cases Numbervars.
 %
-safe_numbervars(E,EE):-duplicate_term(E,EE),
+safe_numbervars(E,EE):-dupe_term(E,EE),
   get_gtime(G),numbervars(EE,G,End,[attvar(skip),functor_name('$VAR'),singletons(true)]),
   term_variables(EE,AttVars),
   numbervars(EE,End,_,[attvar(skip),functor_name('$VAR'),singletons(true)]),

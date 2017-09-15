@@ -381,11 +381,13 @@ mustvv(G):-must(G).
 % unnumbervars(X,YY):- mustvv(unnumbervars0(X,Y)),!,mustvv(Y=YY).
 
 
+dupe_term(E,EE):- duplicate_term(E,EE),E=EE.
+
 get_varname_list(VsOut):- nb_current('$variable_names',Vs),!,check_variable_names(Vs,VsOut),!.
 get_varname_list([]).
 set_varname_list(VsIn):- check_variable_names(VsIn,Vs),
   b_setval('$variable_names',[]),
-  duplicate_term(Vs,VsD),
+  dupe_term(Vs,VsD),
   nb_linkval('$variable_names',VsD).
 
 add_var_to_env(NameS,Var):-
