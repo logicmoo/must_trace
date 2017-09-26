@@ -76,6 +76,46 @@
 :- use_module(library(lists)).
 
 
+
+oo_get_attr(V,A,Value):- var(V),!,get_attr(V,A,Value),!.
+oo_get_attr('$VAR'(Name),N,V):- atom(Name),!,N=vn,V=Name.
+oo_get_attr('$VAR'(Att3),A,Value):- !, oo_put_attrs(NewVar,Att3),get_attr(NewVar,A,Value).
+oo_get_attr('avar'(Att3),A,Value):- !, oo_put_attrs(NewVar,Att3),get_attr(NewVar,A,Value).
+oo_get_attr('avar'(_,Att3),A,Value):- !, oo_put_attrs(NewVar,Att3),get_attr(NewVar,A,Value).
+oo_get_attr(Self,Memb,Value):- strip_module(Memb,M,Prop),catch(oo_call(M,Self,Prop,Value),_E,fail).
+% oo_get_attr(V,A,Value):- trace_or_throw(oo_get_attr(V,A,Value)).
+
+
+put_atts_list([N=V|Attrs],Var):- oo_put_attr(Var,N,V),!,put_atts_list(Attrs,Var).
+put_atts_list([NV|Attrs],Var):- !,NV=..[N,V],oo_put_attr(Var,N,V),!,put_atts_list(Attrs,Var).
+put_atts_list([],_):-!.
+
+%:- if(exists_source(library(atts))).
+%:- user:use_module(library(atts)).
+oo_put_attrs(V,Attrs):- must_be(nonvar,Attrs),is_list(Attrs),!,put_atts_list(Attrs,V).
+%:- endif.
+oo_put_attrs(V,Att3s):- var(V),!,put_attrs(V,Att3s),!.
+oo_put_attrs(VAR,Att3s):- VAR='$VAR'(Name), atom(Name),!,setarg(1,VAR, att(vn, Name, Att3s)).
+oo_put_attrs(VAR,Att3s):- VAR='$VAR'(_Att3),!,setarg(1,VAR, Att3s).
+oo_put_attrs(VAR,Att3s):- VAR='avar'(_Att3),!,setarg(1,VAR, Att3s).
+oo_put_attrs(VAR,Att3s):- VAR='avar'(_,_),!,setarg(2,VAR, Att3s).
+oo_put_attrs(V,Att3s):- trace_or_throw(oo_put_attrs(V,Att3s)).
+
+oo_get_attrs(V,Att3s):- var(V),!,get_attrs(V,Att3s),!.
+oo_get_attrs('$VAR'(Name),_):- atom(Name),!,fail.
+oo_get_attrs('$VAR'(Att3s),Att3):-!,Att3s=Att3.
+oo_get_attrs('avar'(Att3s),Att3):-!,Att3s=Att3.
+oo_get_attrs('avar'(_,Att3s),Att3):-!,Att3s=Att3.
+% oo_get_attrs(V,Value):- trace_or_throw(oo_get_attrs(V,Value)).
+
+oo_put_attr(V,A,Value):- var(V),!,put_attr(V,A,Value),!.
+oo_put_attr(VAR,A,Value):- VAR='$VAR'(Name), atom(Name),!,setarg(1,VAR, att(vn, Name, att(A,Value, []))).
+oo_put_attr(VAR,A,Value):- VAR='$VAR'(Att3),!,setarg(1,VAR, att(A,Value,Att3)).
+oo_put_attr(VAR,A,Value):- VAR='avar'(Att3),!,setarg(1,VAR, att(A,Value,Att3)).
+oo_put_attr(VAR,A,Value):- VAR='avar'(_,Att3),!,setarg(2,VAR, att(A,Value,Att3)).
+oo_put_attr(V,A,Value):- trace_or_throw(oo_put_attr(V,A,Value)).
+
+
 % :- abolish(system:nop/1),asserta(system:nop(_)).
 
 getenv_safe(Name,ValueO,Default):-

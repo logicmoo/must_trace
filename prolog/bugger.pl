@@ -1311,7 +1311,7 @@ traceok(X):-  tlbugger:wastracing -> call_cleanup((dtrace,call(X)),notrace) ; ca
 %
 % Show Entry.
 %
-show_entry(Why,Call):-debugm(Why,show_entry(Call)),show_call(Why,Call).
+show_entry(Why,Call):-debugm1(Why,show_entry(Call)),show_call(Why,Call).
 
 
 
@@ -1356,7 +1356,7 @@ show_call(Goal):- strip_module(Goal,Why,_),show_call(Why,Goal).
 %
 % Show Failure.
 %
-show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm(Why,sc_failed(Why,Goal)),!,fail)).
+show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm1(Why,sc_failed(Why,Goal)),!,fail)).
 
 
 
@@ -1364,7 +1364,7 @@ show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm(Why,sc_failed(Why,Goal)),!
 %
 % Show Failure.
 %
-show_failure(Goal):- show_failure(mpred,Goal).
+show_failure(Goal):- strip_module(Goal,Why,_),show_failure(Why,Goal).
 
 
 %% show_success( +Why, :Goal) is semidet.
@@ -1374,9 +1374,21 @@ show_failure(Goal):- show_failure(mpred,Goal).
 show_success(Why,Goal):- cyclic_term(Goal),dumpST,
  ((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
   \+ \+ notrace(debugm(Why,sc_success(Why,Goal))))).
-show_success(Why,Goal):- dcall0(Goal), 
+show_success(Why,Goal):-  dcall0(Goal), 
  notrace((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
-  \+ \+ notrace(wdmsg(c_success(Why,Goal))))).
+  \+ \+ notrace(debugm1(Why,c_success(Why,Goal))))).
+
+%= 	 	 
+
+%% debugm1( ?Why, ?Msg) is det.
+%
+% Debugm1.
+%
+debugm1(Why,Msg):- % dmsg(debugm(Why,Msg)), 
+                   notrace(debugm10(Why,Msg)).
+
+debugm10(Why,Msg):- \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]),!.
+debugm10(Why,Msg):- dmsg(debugm(Why,Msg)), debug(Why,'~N~p~n',[Msg]),!.
 
 
 
@@ -1384,7 +1396,7 @@ show_success(Why,Goal):- dcall0(Goal),
 %
 % Show Success.
 %
-show_success(Goal):- show_success(mpred,Goal).
+show_success(Goal):- strip_module(Goal,Why,_),show_success(Why,Goal).
 
 %= :- meta_predicate  on_f_log_fail(0).
 :- export(on_f_log_fail/1).
@@ -2473,14 +2485,15 @@ if_prolog(_,_):-!. % Dont run SWI Specificd or others
 %
 % Time Call.
 %
-time_call(Call):-
-  statistics(runtime,[MSecStart,_]),   
-  ignore(show_failure(why,Call)),
+time_call(Call):- gripe_time(0.5,Call).
+
+/*  statistics(runtime,[MSecStart,_]),   
+  ignore(show_failure(Call)*->),
   statistics(runtime,[MSecEnd,_]),
    MSec is (MSecEnd-MSecStart),
    Time is MSec/1000,
    ignore((Time > 0.5 , dmsg('Time'(Time)=Call))).
-
+*/
 
 % = %= :- meta_predicate (gripe_time(+,0)).
 :- export(gripe_time/2).
