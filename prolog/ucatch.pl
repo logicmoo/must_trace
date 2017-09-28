@@ -909,7 +909,7 @@ maplist_safe(Pred,LISTIN, LIST):-!, findall(EE, ((member(E,LISTIN),on_f_debug(ap
 %
 % Bad Functor.
 %
-bad_functor(L) :- arg(_,v('|','.',[],':','/'),L).
+bad_functor(L) :- arg(_,v('|',[],':','/'),L). % .
 
 :- export(warn_bad_functor/1).
 
