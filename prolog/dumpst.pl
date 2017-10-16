@@ -140,7 +140,7 @@ dumpST:- notrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame),dump
 dumpST1:- current_prolog_flag(dmsg_level,never),!.
 dumpST1:- tlbugger:no_slow_io,!,dumpST0,!.
 dumpST1:- tlbugger:ifHideTrace,!.
-dumpST1:- loop_check_early(dumpST9,dumpST0).
+dumpST1:- show_current_source_location,loop_check_early(dumpST9,dumpST0).
 
 %= 	 	 
 
@@ -149,7 +149,7 @@ dumpST1:- loop_check_early(dumpST9,dumpST0).
 % Dump S True Stucture.
 %
 dumpST(Depth):- notrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame))),
-   loop_check_early(logicmoo_util_dumpst:dumpST9(Depth),dumpST0(Depth)).
+   loop_check_early(dumpST9(Depth),dumpST0(Depth)).
 
 
 %= 	 	 
@@ -564,7 +564,7 @@ dumptrace(G):- non_user_console,!,dumpST_error(non_user_console+dumptrace(G)),ab
 dumptrace(G):-
   locally(set_prolog_flag(gui_tracer, false),
    locally(set_prolog_flag(gui, false),
-    locally(flag_call(runtime_debug= false),
+    locally(set_prolog_flag(runtime_debug,0),
      dumptrace0(G)))).
 
 dumptrace0(G):- notrace((tracing,notrace,wdmsg(tracing_dumptrace(G)))),!, catch(((dumptrace0(G) *-> dtrace ; (dtrace,fail))),_,true).

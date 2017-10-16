@@ -51,6 +51,8 @@
 %
 % Must Be Successfull.
 %
+
+% must(Goal):- !,Goal.
 must(Goal):- quietly(get_must(Goal,MGoal))-> call(MGoal).
 
 %% get_must( ?Goal, ?CGoal) is semidet.
@@ -108,6 +110,7 @@ xnotrace(G):- G,!.
 %
 
 sanity(_):- notrace(current_prolog_flag(runtime_safety,0)),!.
+% sanity(_):-!.
 sanity(Goal):- \+ tracing,
    \+ current_prolog_flag(runtime_safety,3),
    \+ current_prolog_flag(runtime_debug,0),

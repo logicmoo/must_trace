@@ -944,7 +944,7 @@ color_line(C,N):-
 % (debug)message.
 %
 dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(main_error,dmsg(C)))).
-dmsg(V):- locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))),!.
+dmsg(V):- notrace((locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))))),!.
 %dmsg(F,A):- notrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
 
 :- system:import(dmsg/1).
@@ -959,13 +959,8 @@ dmsg(F,A):- locally(set_prolog_flag(retry_undefined, none),if_defined_local(dmsg
 
 
 with_output_to_main_error(G):- 
-  % stream_property(In,file_no(0)),
   stream_property(Err,file_no(2)),
-  current_input(I),
-  current_output(O),
-   setup_call_cleanup(set_prolog_IO(I,Err,Err),
-    G,
-     set_prolog_IO(I,O,O)).
+  with_output_to_each(Err,G).
    
 
 
@@ -973,9 +968,8 @@ with_output_to_main_error(G):-
 %
 % Wdmsg.
 %
-wdmsg(_):- current_prolog_flag(dmsg_level,never),!.
-wdmsg(X):- quietly(show_source_location),
- quietly(with_all_dmsg(dmsg(X))),!.
+wdmsg(X):- notrace(((current_prolog_flag(dmsg_level,never)->true;(show_source_location),
+ with_all_dmsg(dmsg(X))))),!.
 
 
 
@@ -1001,7 +995,7 @@ wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 %
 % Wdmsgl.
 %
-wdmsgl(X):- wdmsgl(fmt9,X),!.
+wdmsgl(X):- notrace(wdmsgl(fmt9,X)),!.
 wdmsgl(With,X):- (must((wdmsgl('',With,X)))),!.
 
 wdmsgl(NAME,With,CNF):- is_ftVar(CNF),!,call(With,NAME=CNF).
@@ -1060,7 +1054,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(V):-notrace(locally(t_l:no_kif_var_coroutines(true),ignore(with_output_to_main_error(dmsg00(V))))),!.
+dmsg0(V):-notrace(locally(local_override(no_kif_var_coroutines,true),ignore(with_output_to_main_error(dmsg00(V))))),!.
 
 %= 	 	 
 
@@ -1069,7 +1063,7 @@ dmsg0(V):-notrace(locally(t_l:no_kif_var_coroutines(true),ignore(with_output_to_
 % (debug)message Primary Helper Primary Helper.
 %
 dmsg00(V):-cyclic_term(V),!,writeln(cyclic_term),flush_output,writeln(V),!.
-dmsg00(V):- catch(logicmoo_util_dumpst:simplify_goal_printed(V,VV),_,fail),!,dmsg000(VV),!.
+dmsg00(V):- catch(dumpst:simplify_goal_printed(V,VV),_,fail),!,dmsg000(VV),!.
 dmsg00(V):- dmsg000(V),!.
 
 

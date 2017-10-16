@@ -704,7 +704,7 @@ test_for_release(File):-
   scce_orig(dmsg("~N~nPress Ctrl-D to begin ~n~n  :- ~q. ~n~n",[G]),
   if_interactive(prolog),
    setup_call_cleanup(dmsg("~N~nStarting ~q...~n",[G]),
-      locally(t_l:testing_for_release(File),ensure_loaded(File)),
+      locally_tl(testing_for_release(File),ensure_loaded(File)),
       test_for_release_problems(File))).
 
 
@@ -1102,6 +1102,13 @@ nodebugx(X):-
 
 debugging_logicmoo(Mask):- logicmoo_topic(Mask,Topic),prolog_debug:debugging(Topic, TF, _),!,TF=true.
 
+debugging_logicmoo_setting(_,true,[user_error]):- tracing.
+:- multifile(prolog_debug:debugging/3).
+:- dynamic(prolog_debug:debugging/3).
+:- use_module(library(debug)).
+:- asserta((prolog_debug:debugging(X,Y,Z):-debugging_logicmoo_setting(X,Y,Z))).
+
+
 logicmoo_topic(Mask,Topic):-var(Mask),!,Topic=logicmoo(_).
 logicmoo_topic(logicmoo,Topic):-!,Topic=logicmoo(_).
 logicmoo_topic(Mask,Topic):-prolog_debug:debugging(Topic, _, _),Topic=@=Mask,!.
@@ -1356,6 +1363,7 @@ show_call(Goal):- strip_module(Goal,Why,_),show_call(Why,Goal).
 %
 % Show Failure.
 %
+show_failure(_Why,Goal):-!,Goal.
 show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm1(Why,sc_failed(Why,Goal)),!,fail)).
 
 
@@ -1371,6 +1379,7 @@ show_failure(Goal):- strip_module(Goal,Why,_),show_failure(Why,Goal).
 %
 % Show Success.
 %
+show_success(_Why,Goal):-!,Goal.
 show_success(Why,Goal):- cyclic_term(Goal),dumpST,
  ((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
   \+ \+ notrace(debugm(Why,sc_success(Why,Goal))))).

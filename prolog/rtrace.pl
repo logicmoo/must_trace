@@ -77,10 +77,10 @@ maybe_hide(M:P):- (current_prolog_flag(runtime_debug,N), N>1) -> true ; '$hide'(
 %
 % Only leashes interactive consoles
 %
-maybe_leash(Some):- maybe_leash->leash(Some);true.
+maybe_leash(Some):- notrace((maybe_leash->leash(Some);true)).
 :- maybe_hide(maybe_leash/1).
 
-maybe_leash:- \+ current_prolog_flag(runtime_must,keep_going), \+ non_user_console.
+maybe_leash:- notrace((\+ current_prolog_flag(runtime_must,keep_going), \+ non_user_console)).
 non_user_console:- \+ stream_property(current_input, tty(true)),!.
 non_user_console:- \+ stream_property(current_input,close_on_abort(false)).
 
@@ -169,7 +169,7 @@ quietly1(_):- trace,!,notrace(fail).
 quietly2(Goal):- \+ tracing -> Goal ; (notrace,call_with_cleanup(scce_orig(notrace,Goal,trace),trace)).
 
 % version 3 
-quietly(Goal):- !, Goal.  % for overiding
+% quietly(Goal):- !, Goal.  % for overiding
 quietly(Goal):- \+ tracing -> Goal ; 
  (notrace,
   (((Goal,deterministic(YN))) *->
@@ -180,7 +180,7 @@ quietly(Goal):- \+ tracing -> Goal ;
 
 deterministically_must(G):- call(call,G),deterministic(YN),true,
   (YN==true -> true; 
-     ((wdmsg(failed_deterministically_must(G)),(break)))).
+     ((wdmsg(failed_deterministically_must(G)),(!)))),!.
 
 
 %:- maybe_hide(quietly/1).
@@ -191,11 +191,11 @@ deterministically_must(G):- call(call,G),deterministic(YN),true,
 % Start RTracer.
 %
 
-rtrace:- notrace((start_rtrace,debug)),trace.
+rtrace:- start_rtrace,trace.
 
-:- maybe_hide(rtrace/0).
+:- '$hide'(rtrace/0).
 
-start_rtrace:- 
+start_rtrace:-
       leash(-all),
       assert(t_l:rtracing),
       set_prolog_flag(access_level,system),
@@ -205,7 +205,7 @@ start_rtrace:-
       visible(+exception),
       maybe_leash(+exception).
 
-:- maybe_hide(start_rtrace/0).
+:- '$hide'(start_rtrace/0).
 
 %! srtrace is det.
 %

@@ -369,7 +369,7 @@ is_main_thread:-thread_self_main,!.
 %
 with_main_error_to_output(Goal):-
  current_output(Out),
-  locally(t_l:thread_local_error_stream(Out),Goal).
+  locally_tl(thread_local_error_stream(Out),Goal).
 
 
 with_current_io(Goal):-
@@ -377,21 +377,17 @@ with_current_io(Goal):-
   scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,Err)).
 
 
+
 with_dmsg_to_main(Goal):-
-  get_main_error_stream(Err),current_error_stream(ErrWas),Err==ErrWas,!,Goal.
-with_dmsg_to_main(Goal):-
-  get_main_error_stream(Err),current_error_stream(ErrWas),
-  current_input(IN),current_output(OUT),
-   locally(t_l:thread_local_error_stream(Err),
-   scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
+  get_main_error_stream(Err),
+   locally_tl(thread_local_error_stream(Err),Goal).
 
 with_error_to_main(Goal):-
-  get_main_error_stream(Err),current_error_stream(ErrWas),Err=ErrWas,!,Goal.
-with_error_to_main(Goal):- trace,
-  get_main_error_stream(Err),get_thread_current_error(ErrWas),
-  current_input(IN),current_output(OUT),
-   locally(t_l:thread_local_error_stream(Err),
-   scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
+  get_main_error_stream(Err),current_error_stream(ErrWas),Err==ErrWas,!,Goal.
+with_error_to_main(Goal):- 
+  get_main_error_stream(Err),current_error_stream(ErrWas),
+   locally_tl(thread_local_error_stream(Err),
+   scce_orig(set_stream(Err,alias(user_error)),Goal,set_stream(ErrWas,alias(user_error)))).
 
 
 
@@ -403,6 +399,7 @@ with_error_to_main(Goal):- trace,
 %
 get_thread_current_error(Err):- t_l:thread_local_error_stream(Err),!.
 get_thread_current_error(Err):- thread_self(ID),lmcache:thread_current_error_stream(ID,Err),!.
+get_thread_current_error(Err):- stream_property(Err,alias(current_error)),!.
 get_thread_current_error(Err):- stream_property(Err,alias(user_error)),!.
 get_thread_current_error(Err):- get_main_error_stream(Err),!.
 
@@ -411,9 +408,18 @@ get_thread_current_error(Err):- get_main_error_stream(Err),!.
 % Current Main Error Stream.
 %
 get_main_error_stream(Err):- stream_property(Err,alias(main_error)),!.
-get_main_error_stream(Err):- lmcache:thread_main(user,ID),lmcache:thread_current_error_stream(ID,Err).
-get_main_error_stream(Err):- t_l:thread_local_error_stream(Err),!.
+get_main_error_stream(Err):- lmcache:thread_main(user,ID),lmcache:thread_current_error_stream(ID,Err),!.
+get_main_error_stream(Err):- stream_property(Err,file_no(2)),!.
 get_main_error_stream(Err):- stream_property(Err,alias(user_error)),!.
+get_main_error_stream(Err):- thread_call_blocking_one(main,get_thread_current_error(Err)).
+
+thread_call_blocking_one(Thread,G):- thread_self(Self),
+  thread_signal(Thread,
+   catch(( (G,deterministic(YN),true) 
+    -> thread_send_message(Self,thread_call_blocking_one(Thread,G,fail,true))
+     ; thread_send_message(Self,thread_call_blocking_one(Thread,G,true,YN))),
+     E,thread_send_message(Self,thread_call_blocking_one(Thread,G,throw(E),true)))),
+   thread_get_message(thread_call_blocking_one(Thread,G,TF,_R)),!,call(TF).
 
 
 %=
@@ -422,7 +428,7 @@ get_main_error_stream(Err):- stream_property(Err,alias(user_error)),!.
 %
 % Format Converted To Error.
 %
-format_to_error(F,A):-get_main_error_stream(Err),!,format(Err,F,A).
+format_to_error(F,A):-get_thread_current_error(Err),!,format(Err,F,A).
 
 %=
 
@@ -430,7 +436,7 @@ format_to_error(F,A):-get_main_error_stream(Err),!,format(Err,F,A).
 %
 % Fresh Line Converted To Err.
 %
-fresh_line_to_err:- notrace((flush_output_safe,get_main_error_stream(Err),format(Err,'~N',[]),flush_output_safe(Err))).
+fresh_line_to_err:- notrace((flush_output_safe,get_thread_current_error(Err),format(Err,'~N',[]),flush_output_safe(Err))).
 
 :- dynamic(lmcache:thread_current_input/2).
 :- volatile(lmcache:thread_current_input/2).
@@ -596,7 +602,7 @@ when_defined(Goal):-if_defined(Goal,true).
 to_pi(P,M:P):-var(P),!,current_module(M).
 to_pi(M:P,M:P):-var(P),!,current_module(M).
 to_pi(Find,(M:PI)):-
- locally(flag_call(runtime_debug=false),
+ locally(set_prolog_flag(runtime_debug,0),
    (once(catch(match_predicates(Find,Found),_,fail)),Found=[_|_],!,member(M:F/A,Found),functor(PI,F,A))).
 to_pi(M:Find,M:PI):-!,current_module(M),to_pi0(M,Find,M:PI).
 to_pi(Find,M:PI):-current_module(M),to_pi0(M,Find,M:PI).
@@ -644,7 +650,6 @@ show_new_src_location(K,FL):- t_l:last_src_loc(K,FL),!.
 show_new_src_location(K,FL):- retractall(t_l:last_src_loc(K,_)),format_to_error('~N% ~w ',[FL]),!,asserta(t_l:last_src_loc(K,FL)).
 
 
-:- thread_local(t_l:current_local_why/2).
 :- thread_local(t_l:current_why_source/1).
 
 
@@ -704,18 +709,24 @@ current_source_location0(M,typein):- '$current_typein_module'(M).
 %
 % Current Generation Of Proof.
 %
-current_why(Why):- t_l:current_local_why(Why,_),!.
+current_why(Why):- nb_current('$current_why',wp(Why,_)).
 current_why(mfl(M,F,L)):- current_source_file(F:L),var(L),F= module(M),!.
-current_why(mfl(M,F,L)):- source_module(M),call(ereq,mtHybrid(M)),current_source_file(F:L),!.
-current_why(mfl(M,F,L)):- call(ereq,defaultAssertMt(M)),current_source_file(F:L),!.
+current_why(mfl(M,F,L)):- source_module(M),clause_b(mtHybrid(M)),current_source_file(F:L),!.
+current_why(mfl(M,F,L)):- clause(defaultAssertMt(M),B),B,current_source_file(F:L),!.
 
 
 %% with_current_why( +Why, +:Prolog) is semidet.
 %
 % Save Well-founded Semantics Reason while executing code.
 %
-with_current_why(Why,Prolog):- locally(t_l:current_local_why(Why,Prolog),Prolog).
+with_current_why(Why,Prolog):- 
+  nb_current('$current_why',WAS),
+  b_setval('$current_why',wp(Why,Prolog)),
+  call(Prolog),
+  b_setval('$current_why',WAS).
+  
 
+:- nb_setval('$current_why',[]).
 
 % source_module(M):-!,M=u.
 :-export(source_module/1).
@@ -787,9 +798,14 @@ source_variables_l(AllS):-
 :-export( show_source_location/0).
 show_source_location:- current_prolog_flag(dmsg_level,never),!.
 %show_source_location:- quietly((tlbugger:no_slow_io)),!.
-show_source_location:- source_location(F,L),!,show_new_src_location(F:L),!.
-show_source_location:- current_source_file(FL),sanity(nonvar(FL)),!,show_new_src_location(FL),!.
+show_source_location:- get_source_location(FL),show_new_src_location(FL),!. 
 show_source_location:- dumpST,dtrace.
+
+show_current_source_location:- get_source_location(FL),format_to_error('~N% ~w ',[FL]). 
+
+get_source_location(F:L):- source_location(F,L),!.
+get_source_location(FL):- current_source_file(FL),sanity(nonvar(FL)),!.
+get_source_location(get_source_location_unknown).
 
 
 % :- ensure_loaded(hook_database).

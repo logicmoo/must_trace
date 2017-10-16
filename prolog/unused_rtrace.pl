@@ -563,7 +563,7 @@ test_for_release(File):-
   scce_orig(dmsg("~N~nPress Ctrl-D to begin ~n~n  :- ~q. ~n~n",[G]),
   if_interactive(prolog),
    setup_call_cleanup(dmsg("~N~nStarting ~q...~n",[G]),
-      locally(t_l:testing_for_release(File),ensure_loaded(File)),
+      locally_tl(testing_for_release(File),ensure_loaded(File)),
       test_for_release_problems(File))).
 
 
@@ -3249,7 +3249,7 @@ dumptrace(G):- non_user_console,!,dumpST_error(non_user_console+dumptrace(G)),ab
 dumptrace(G):-
   locally(set_prolog_flag(gui_tracer, false),
    locally(set_prolog_flag(gui, false),
-    locally(flag_call(runtime_debug= false),
+    locally(set_prolog_flag(runtime_debug,0),
      dumptrace0(G)))).
 
 dumptrace0(G):- quietly((tracing,notrace,wdmsg(tracing_dumptrace(G)))),!, catch(((dumptrace0(G) *-> dtrace ; (dtrace,fail))),_,true).
@@ -5162,7 +5162,7 @@ is_main_thread:-thread_self_main,!.
 %
 with_main_error_to_output(Goal):-
  current_output(Out),
-  locally(t_l:thread_local_error_stream(Out),Goal).
+  locally_tl(thread_local_error_stream(Out),Goal).
 
 
 with_current_io(Goal):-
@@ -5175,7 +5175,7 @@ with_dmsg_to_main(Goal):-
 with_dmsg_to_main(Goal):-
   get_main_error_stream(Err),current_error_stream(ErrWas),
   current_input(IN),current_output(OUT),
-   locally(t_l:thread_local_error_stream(Err),
+   locally_tl(thread_local_error_stream(Err),
    scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
 
 with_error_to_main(Goal):-
@@ -5183,7 +5183,7 @@ with_error_to_main(Goal):-
 with_error_to_main(Goal):- trace,
   get_main_error_stream(Err),get_thread_current_error(ErrWas),
   current_input(IN),current_output(OUT),
-   locally(t_l:thread_local_error_stream(Err),
+   locally_tl(thread_local_error_stream(Err),
    scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
 
 
@@ -5389,7 +5389,7 @@ when_defined(Goal):-if_defined(Goal,true).
 to_pi(P,M:P):-var(P),!,current_module(M).
 to_pi(M:P,M:P):-var(P),!,current_module(M).
 to_pi(Find,(M:PI)):-
- locally(flag_call(runtime_debug=false),
+ locally(set_prolog_flag(runtime_debug,0),
    (once(catch(match_predicates(Find,Found),_,fail)),Found=[_|_],!,member(M:F/A,Found),functor(PI,F,A))).
 to_pi(M:Find,M:PI):-!,current_module(M),to_pi0(M,Find,M:PI).
 to_pi(Find,M:PI):-current_module(M),to_pi0(M,Find,M:PI).
@@ -5507,7 +5507,7 @@ current_why(mfl(M,F,L)):- call(ereq,defaultAssertMt(M)),current_source_file(F:L)
 %
 % Save Well-founded Semantics Reason while executing code.
 %
-with_current_why(Why,Prolog):- locally(t_l:current_local_why(Why,Prolog),Prolog).
+with_current_why(Why,Prolog):- locally_tl(current_local_why(Why,Prolog),Prolog).
 
 
 % source_module(M):-!,M=u.
@@ -7367,7 +7367,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(V):-quietly(locally(t_l:no_kif_var_coroutines(true),ignore(with_output_to_main_error(dmsg00(V))))),!.
+dmsg0(V):-quietly(locally_tl(no_kif_var_coroutines(true),ignore(with_output_to_main_error(dmsg00(V))))),!.
 
 %= 	 	 
 
