@@ -68,17 +68,33 @@ on_x_debug(Goal):-
   -> Goal
    ;
    (catchv(Goal,E,(ignore(debugCallWhy(on_x_debug(E,Goal),Goal)),throw(E)))).
-   
 
-:- meta_predicate(maybe_hide(:)).
-maybe_hide(M:P):- (current_prolog_flag(runtime_debug,N), N>1) -> true ; '$hide'(M:P). 
+
+:- meta_predicate('$with_unlocked_pred_local'(:,0)).
+'$with_unlocked_pred_local'(MP,Goal):- strip_module(MP,M,P),Pred=M:P,
+   (predicate_property(Pred,foreign)-> true ;
+  (
+ ('$get_predicate_attribute'(Pred, system, OnOff)->true;throw('$get_predicate_attribute'(Pred, system, OnOff))),
+ (OnOff==0 -> Goal ;
+ setup_call_cleanup('$set_predicate_attribute'(Pred, system, 0),
+   catch(Goal,E,throw(E)),'$set_predicate_attribute'(Pred, system, 1))))).
+
+
+
+:- meta_predicate(totally_hide(:)).
+totally_hide(MP):- strip_module(MP,M,P),Pred=M:P,
+   % (current_prolog_flag(runtime_debug,N), N>2) -> unhide(Pred) ; 
+  '$with_unlocked_pred_local'(Pred,
+   (('$set_predicate_attribute'(Pred, trace, false),'$set_predicate_attribute'(Pred, hide_childs, true)))).
+
+unhide(Pred):- '$set_predicate_attribute'(Pred, trace, true),mpred_trace_childs(Pred).
 
 %! maybe_leash( +Flags) is det.
 %
 % Only leashes interactive consoles
 %
 maybe_leash(Some):- notrace((maybe_leash->leash(Some);true)).
-:- maybe_hide(maybe_leash/1).
+:- totally_hide(maybe_leash/1).
 
 maybe_leash:- notrace((\+ current_prolog_flag(runtime_must,keep_going), \+ non_user_console)).
 non_user_console:- \+ stream_property(current_input, tty(true)),!.
@@ -95,8 +111,8 @@ get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,'$visible'(_, OldV)
      (current_prolog_flag(gui_tracer, GWas)->CC3=set_prolog_flag(gui_tracer, GWas);CC3=true),!,
      RestoreTrace.
 
-:- maybe_hide(get_trace_reset/1).
-:- maybe_hide(get_trace_reset/1).
+:- totally_hide(get_trace_reset/1).
+:- totally_hide(get_trace_reset/1).
 
 
 
@@ -105,7 +121,7 @@ get_trace_reset((notrace,set_prolog_flag(debug,WasDebug),CC3,'$visible'(_, OldV)
 % Save Guitracer.
 %
 push_guitracer:-  notrace(ignore(((current_prolog_flag(gui_tracer, GWas);GWas=false),asserta(t_l:wasguitracer(GWas))))).
-:- maybe_hide(push_guitracer/0).
+:- totally_hide(push_guitracer/0).
 
 
 %! pop_guitracer is nondet.
@@ -113,7 +129,7 @@ push_guitracer:-  notrace(ignore(((current_prolog_flag(gui_tracer, GWas);GWas=fa
 % Restore Guitracer.
 %
 pop_guitracer:- notrace(ignore(((retract(t_l:wasguitracer(GWas)),set_prolog_flag(gui_tracer, GWas))))).
-:- maybe_hide(pop_guitracer/0).
+:- totally_hide(pop_guitracer/0).
 
 
 %! push_tracer is det.
@@ -121,21 +137,21 @@ pop_guitracer:- notrace(ignore(((retract(t_l:wasguitracer(GWas)),set_prolog_flag
 % Push Tracer.
 %
 push_tracer:- get_trace_reset(Reset)->asserta(t_l:tracer_reset(Reset)).
-:- maybe_hide(push_tracer/0).
+:- totally_hide(push_tracer/0).
 
 %! pop_tracer is det.
 %
 % Pop Tracer.
 %
 pop_tracer:- notrace((retract(t_l:tracer_reset(Reset))->Reset;true)).
-:- maybe_hide(pop_tracer/0).
+:- totally_hide(pop_tracer/0).
 
 %! reset_tracer is det.
 %
 % Reset Tracer.
 %
 reset_tracer:- ignore((t_l:tracer_reset(Reset)->Reset;true)).
-:- maybe_hide(reset_tracer/0).
+:- totally_hide(reset_tracer/0).
 
 
 :- multifile(user:prolog_exception_hook/4).
@@ -183,7 +199,7 @@ deterministically_must(G):- call(call,G),deterministic(YN),true,
      ((wdmsg(failed_deterministically_must(G)),(!)))),!.
 
 
-%:- maybe_hide(quietly/1).
+%:- totally_hide(quietly/1).
 
 
 %! rtrace is det.
@@ -193,7 +209,7 @@ deterministically_must(G):- call(call,G),deterministic(YN),true,
 
 rtrace:- start_rtrace,trace.
 
-:- '$hide'(rtrace/0).
+:- 'totally_hide'(rtrace/0).
 
 start_rtrace:-
       leash(-all),
@@ -205,7 +221,7 @@ start_rtrace:-
       visible(+exception),
       maybe_leash(+exception).
 
-:- '$hide'(start_rtrace/0).
+:- 'totally_hide'(start_rtrace/0).
 
 %! srtrace is det.
 %
@@ -213,7 +229,7 @@ start_rtrace:-
 %
 srtrace:- notrace, set_prolog_flag(access_level,system), rtrace.
 
-:- maybe_hide(srtrace/0).
+:- totally_hide(srtrace/0).
 
 
 
@@ -228,11 +244,13 @@ stop_rtrace:-
   maybe_leash(+exception),
   retractall(t_l:rtracing),
   !.
-:- maybe_hide(stop_rtrace/0).
+
+:- 'totally_hide'(stop_rtrace/0).
+:- system:import(stop_rtrace/0).
 
 nortrace:- stop_rtrace,ignore(pop_tracer).
 
-:- maybe_hide(nortrace/0).
+:- totally_hide(nortrace/0).
 
 
 :- thread_local('$leash_visible'/2).
@@ -257,14 +275,14 @@ restore_trace0(Goal):-
    ((Goal*-> (push_leash_visible, '$leash'(_, OldL),'$visible'(_, OldV)) ; fail)),
    ('$leash'(_, OldL),'$visible'(_, OldV))).
 
-:- maybe_hide(system:'$leash'/2).
-:- maybe_hide(system:'$visible'/2).
+:- totally_hide(system:'$leash'/2).
+:- totally_hide(system:'$visible'/2).
 
 push_leash_visible:- notrace((('$leash'(OldL0, OldL0),'$visible'(OldV0, OldV0), asserta('$leash_visible'(OldL0,OldV0))))).
 restore_leash_visible:- notrace((('$leash_visible'(OldL1,OldV1)->('$leash'(_, OldL1),'$visible'(_, OldV1));true))).
 
 % restore_trace(Goal):- setup_call_cleanup(get_trace_reset(Reset),Goal,notrace(Reset)).
-:- maybe_hide(restore_trace/0).
+:- totally_hide(restore_trace/0).
 
 
 
@@ -329,22 +347,22 @@ ERROR: Unhandled exception: good
 */
 
 set_leash_vis(OldL,OldV):- '$leash'(_, OldL),'$visible'(_, OldV),!.
-:- maybe_hide(set_leash_vis/2).
+:- totally_hide(set_leash_vis/2).
 
 next_rtrace:- (nortrace;(rtrace,trace,notrace(fail))).
-:- '$hide'(next_rtrace/0).
+:- 'totally_hide'(next_rtrace/0).
 
 
 rtrace(Goal):- notrace(tracing)-> rtrace0((trace,Goal)) ; 
-  setup_call_cleanup(true,rtrace0((trace,Goal)),stop_rtrace).
+  setup_call_cleanup(true,rtrace0((trace,Goal)),system:notrace(stop_rtrace)).
 rtrace0(Goal):-
- setup_call_cleanup((current_prolog_flag(debug,O),rtrace),
-   (Goal,notrace,deterministic(YN),
+ setup_call_cleanup(system:notrace((current_prolog_flag(debug,O),rtrace)),
+   (trace,Goal,notrace,deterministic(YN),
      (YN == true->!;next_rtrace)),
-     set_prolog_flag(debug,O)).
+     system:notrace(set_prolog_flag(debug,O))).
 
-:- maybe_hide(rtrace/1).
-:- maybe_hide(rtrace0/1).
+:- '$hide'(rtrace/1).
+:- '$hide'(rtrace0/1).
 :- '$set_predicate_attribute'(rtrace/1, hide_childs, true).
 :- '$set_predicate_attribute'(rtrace0/1, hide_childs, false).
 
@@ -356,18 +374,18 @@ rtrace0(Goal):-
 %
 rtrace_break(Goal):- \+ maybe_leash, !, rtrace(Goal).
 rtrace_break(Goal):- stop_rtrace,trace,debugCallWhy(rtrace_break(Goal),Goal).
-%:- maybe_hide(rtrace_break/1).
+%:- totally_hide(rtrace_break/1).
 :- '$set_predicate_attribute'(rtrace_break/1, hide_childs, false).
 
 
 
 :- unlock_predicate(system:notrace/1).
-%:- if_may_hide('$hide'(quietly/1)).
-%:- if_may_hide('$hide'(system:notrace/1,  hide_childs, 1)).
-%:- if_may_hide('$hide'(system:notrace/1)).
-:- maybe_hide(system:tracing/0).
-:- maybe_hide(system:notrace/0).
-:- maybe_hide(system:trace/0).
+:- '$hide'(quietly/1).
+%:- if_may_hide('totally_hide'(system:notrace/1,  hide_childs, 1)).
+%:- if_may_hide('totally_hide'(system:notrace/1)).
+:- totally_hide(system:tracing/0).
+:- totally_hide(system:notrace/0).
+:- totally_hide(system:trace/0).
 :- lock_predicate(system:notrace/1).
 
 %! ftrace( :Goal) is nondet.
@@ -389,9 +407,9 @@ ftrace(Goal):- restore_trace((
 
 :- use_module(library(logicmoo_util_common)).
 :- fixup_exports.
-:- maybe_hide('$toplevel':save_debug).
-:- maybe_hide('$toplevel':toplevel_call/1).
-:- maybe_hide('$toplevel':residue_vars(_,_)).
-:- maybe_hide('$toplevel':save_debug).
-:- maybe_hide('$toplevel':no_lco).
+:- totally_hide('$toplevel':save_debug).
+:- totally_hide('$toplevel':toplevel_call/1).
+:- totally_hide('$toplevel':residue_vars(_,_)).
+:- totally_hide('$toplevel':save_debug).
+:- totally_hide('$toplevel':no_lco).
 

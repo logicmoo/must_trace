@@ -88,7 +88,7 @@ dump_st:- prolog_current_frame(Frame),dumpST0(Frame,10).
 % Dump S True Stucture Primary Helper.
 %
 dumpST0:- dbreak, 
-   prolog_current_frame(Frame),(tracing->notrace((CU=dtrace,notrace));CU=true),dumpST0(Frame,800),!,CU.
+   prolog_current_frame(Frame),(tracing->zotrace((CU=dtrace,notrace));CU=true),dumpST0(Frame,800),!,CU.
 
 %= 	 	 
 
@@ -125,7 +125,7 @@ dumpST0(Frame,MaxDepth):- ignore(MaxDepth=5000),Term = dumpST(MaxDepth),
 %
 % Dump S True Stucture.
 %
-dumpST:- notrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame),dumpST1)).
+dumpST:- zotrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame),dumpST1)).
 
 
 :- thread_local(tlbugger:no_slow_io/0).
@@ -148,7 +148,7 @@ dumpST1:- show_current_source_location,loop_check_early(dumpST9,dumpST0).
 %
 % Dump S True Stucture.
 %
-dumpST(Depth):- notrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame))),
+dumpST(Depth):- zotrace((prolog_current_frame(Frame),b_setval('$dump_frame',Frame))),
    loop_check_early(dumpST9(Depth),dumpST0(Depth)).
 
 
@@ -168,7 +168,7 @@ get_m_opt(Opts,Max_depth,D100,RetVal):-E=..[Max_depth,V],(((member(E,Opts),nonva
 %
 % Dump S T9.
 %
-dumpST9:- notrace((once(nb_current('$dump_frame',Frame);prolog_current_frame(Frame)), dumpST9(Frame,5000))).
+dumpST9:- zotrace((once(nb_current('$dump_frame',Frame);prolog_current_frame(Frame)), dumpST9(Frame,5000))).
 
 %= 	 	 
 
@@ -499,12 +499,12 @@ dbreak:- wdmsg("DUMP_BREAK/0"),dumpST,wdmsg("DUMP_BREAK/0"),
 % (debug) Trace.
 %
 
-dtrace(G):- notrace((tlbugger:has_auto_trace(C),wdmsg(has_auto_trace(C,G)))),!,call(C,G). 
+dtrace(G):- zotrace((tlbugger:has_auto_trace(C),wdmsg(has_auto_trace(C,G)))),!,call(C,G). 
 dtrace(G):- strip_module(G,_,dbreak),\+ thread_self_main,!.
-% dtrace(G):- notrace((tracing,notrace)),!,wdmsg(tracing_dtrace(G)),
+% dtrace(G):- zotrace((tracing,notrace)),!,wdmsg(tracing_dtrace(G)),
 %   scce_orig(notrace,restore_trace((leash(+all),dumptrace_or_cont(G))),trace).
 
-dtrace(G):- notrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;
+dtrace(G):- zotrace((once(((G=dmsg(GG);G=_:dmsg(GG);G=GG),nonvar(GG))),wdmsg(GG)))->true;
  catch(dumptrace1(G),E, handle_dumptrace_signal(G,E)),fail. %always fails
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
 %dtrace(G):- \+ tlbugger:ifCanTrace,!,quietly((wdmsg((not(tlbugger:ifCanTrace(G)))))),!,badfood(G),!,dumpST.
@@ -567,7 +567,7 @@ dumptrace(G):-
     locally(set_prolog_flag(runtime_debug,0),
      dumptrace0(G)))).
 
-dumptrace0(G):- notrace((tracing,notrace,wdmsg(tracing_dumptrace(G)))),!, catch(((dumptrace0(G) *-> dtrace ; (dtrace,fail))),_,true).
+dumptrace0(G):- zotrace((tracing,notrace,wdmsg(tracing_dumptrace(G)))),!, catch(((dumptrace0(G) *-> dtrace ; (dtrace,fail))),_,true).
 dumptrace0(G):-dumptrace1(G).
 dumptrace1(G):-   
   catch(attach_console,_,true),
@@ -594,12 +594,12 @@ ggtrace:-
 %
 dumptrace(_,0'h):- listing(dumptrace/2),!,fail.
 dumptrace(_,0'g):-!,dumpST,!,fail.
-dumptrace(_,0'G):-!,notrace(dumpST0(500000)),!,fail.
+dumptrace(_,0'G):-!,zotrace(dumpST0(500000)),!,fail.
 dumptrace(_,0'D):-!,prolog_stack:backtrace(8000),!,fail.
 dumptrace(_,0'd):-!,prolog_stack:backtrace(800),!,fail.
 
 dumptrace(G,0'l):-!, 
-  restore_trace(( notrace(ggtrace),G)),!,notrace.
+  restore_trace(( zotrace(ggtrace),G)),!,notrace.
 %dumptrace(G,0's):-!,quietly(ggtrace),!,(quietly(G)*->true;true).
 dumptrace(G,0'S):-!, wdmsg(skipping(G)),!.
 dumptrace(_,0'c):-!, throw(continue).
@@ -630,7 +630,7 @@ dumptrace(_,C):-fmt(unused_keypress(C)),!,fail.
 %
 % Dump Trace Ret.
 %
-dumptrace_ret(G):- notrace((leash(+all),visible(+all),visible(+unify),trace)),G.
+dumptrace_ret(G):- zotrace((leash(+all),visible(+all),visible(+unify),trace)),G.
 
 :- use_module(library(logicmoo_util_common)).
 
@@ -662,7 +662,7 @@ hook_message_hook:-
 %  current_predicate(logicmoo_bugger_loaded/0)
 
 user:message_hook(Term, Kind, Lines):- 
- notrace(( 
+ quietly(( 
  loop_check((ignore((
  tlbugger:rtracing,
  \+ \+ 

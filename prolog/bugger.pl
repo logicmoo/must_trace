@@ -560,8 +560,8 @@ call_count(C,N):-findall(C,C,L),nth1(N,L,C).
 
 % :- if_may_hide('$hide'(skipWrapper/0)).
 % :- if_may_hide('$hide'(tracing/0)).
-% :- if_may_hide('$set_predicate_attribute'(tlbugger:skipMust,hide_childs,1)).
-% :- if_may_hide('$set_predicate_attribute'(tlbugger:skipWrapper,hide_childs,1)).
+% :- if_may_hide('$set_predicate_attribute'(tlbugger:skipMust,hide_childs,true)).
+% :- if_may_hide('$set_predicate_attribute'(tlbugger:skipWrapper,hide_childs,true)).
 
 :- export(ignore_each/1).
 % = %= :- meta_predicate (ignore_each(1)).
@@ -902,7 +902,7 @@ bugger_t_expansion(_,T,T):-not(compound(T)),!.
 bugger_t_expansion(_,prolog_call(T),T):-!.
 bugger_t_expansion(_,dynamic(T),dynamic(T)):-!.
 bugger_t_expansion(_,format(F,A),format_safe(F,A)):-!.
-bugger_t_expansion(CM,notrace(T),quietly(TT)):-!,bugger_t_expansion(CM,(T),(TT)).
+bugger_t_expansion(CM,zotrace(T),quietly(TT)):-!,bugger_t_expansion(CM,(T),(TT)).
 bugger_t_expansion(_,F/A,F/A):-!.
 bugger_t_expansion(_,M:F/A,M:F/A):-!.
 bugger_t_expansion(CM,[F0|ARGS0],[F1|ARGS1]):- !,bugger_t_expansion(CM,F0,F1),bugger_t_expansion(CM,ARGS0,ARGS1).
@@ -1363,7 +1363,6 @@ show_call(Goal):- strip_module(Goal,Why,_),show_call(Why,Goal).
 %
 % Show Failure.
 %
-show_failure(_Why,Goal):-!,Goal.
 show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm1(Why,sc_failed(Why,Goal)),!,fail)).
 
 
@@ -1382,10 +1381,10 @@ show_failure(Goal):- strip_module(Goal,Why,_),show_failure(Why,Goal).
 show_success(_Why,Goal):-!,Goal.
 show_success(Why,Goal):- cyclic_term(Goal),dumpST,
  ((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
-  \+ \+ notrace(debugm(Why,sc_success(Why,Goal))))).
+  \+ \+ zotrace(debugm(Why,sc_success(Why,Goal))))).
 show_success(Why,Goal):-  dcall0(Goal), 
- notrace((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
-  \+ \+ notrace(debugm1(Why,c_success(Why,Goal))))).
+ zotrace((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
+  \+ \+ zotrace(debugm1(Why,c_success(Why,Goal))))).
 
 %= 	 	 
 
@@ -1394,7 +1393,7 @@ show_success(Why,Goal):-  dcall0(Goal),
 % Debugm1.
 %
 debugm1(Why,Msg):- % dmsg(debugm(Why,Msg)), 
-                   notrace(debugm10(Why,Msg)).
+                   zotrace(debugm10(Why,Msg)).
 
 debugm10(Why,Msg):- \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]),!.
 debugm10(Why,Msg):- dmsg(debugm(Why,Msg)), debug(Why,'~N~p~n',[Msg]),!.
@@ -1416,7 +1415,7 @@ show_success(Goal):- strip_module(Goal,Why,_),show_success(Why,Goal).
 %
 % Whenever Functor Log Fail.
 %
-on_f_log_fail(Goal):-one_must(Goal,notrace((dmsg(on_f_log_fail(Goal)),cleanup_strings,!,fail))).
+on_f_log_fail(Goal):-one_must(Goal,zotrace((dmsg(on_f_log_fail(Goal)),cleanup_strings,!,fail))).
 
 
 
@@ -1837,7 +1836,7 @@ do_gc0:- set_prolog_flag(gc,true), do_gc1, set_prolog_flag(gc,false).
 %
 % Do Gc Secondary Helper.
 %
-do_gc1:- notrace((garbage_collect, cleanup_strings /*garbage_collect_clauses*/ /*, statistics*/
+do_gc1:- zotrace((garbage_collect, cleanup_strings /*garbage_collect_clauses*/ /*, statistics*/
                     )).
 
 

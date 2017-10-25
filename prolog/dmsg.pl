@@ -356,7 +356,7 @@ matches_term(Filter,Term):- ( \+ \+ (matches_term0(Filter,Term))),!.
 %
 % Contains Atom.
 %
-contains_atom(V,A):-sub_term(VV,V),nonvar(VV),functor_safe(VV,A,_).
+contains_atom(V,A):-sub_term(VV,V),nonvar(VV),cfunctor(VV,A,_).
 
 %% matches_term0( :TermFilter, ?Term) is det.
 %
@@ -364,7 +364,7 @@ contains_atom(V,A):-sub_term(VV,V),nonvar(VV),functor_safe(VV,A,_).
 %
 matches_term0(Filter,Term):- Term = Filter.
 matches_term0(Filter,Term):- atomic(Filter),!,contains_atom(Term,Filter).
-matches_term0(F/A,Term):- (var(A)->member(A,[0,1,2,3,4]);true), functor_safe(Filter,F,A), matches_term0(Filter,Term).
+matches_term0(F/A,Term):- (var(A)->member(A,[0,1,2,3,4]);true), cfunctor(Filter,F,A), matches_term0(Filter,Term).
 matches_term0(Filter,Term):- sub_term(STerm,Term),nonvar(STerm),matches_term0(Filter,STerm),!.
 
 
@@ -556,7 +556,7 @@ fmt_portray_clause(X):- renumbervars_prev(X,Y),!, portray_clause(Y).
 % Format Or Pretty Print.
 %
 fmt_or_pp(portray((X:-Y))):-!,fmt_portray_clause((X:-Y)),!.
-fmt_or_pp(portray(X)):- !,functor_safe(X,F,A),fmt_portray_clause((pp(F,A):-X)),!.
+fmt_or_pp(portray(X)):- !,cfunctor(X,F,A),fmt_portray_clause((pp(F,A):-X)),!.
 fmt_or_pp(X):-format('~q~N',[X]).
 
 
@@ -703,7 +703,7 @@ with_dmsg(Functor,Goal):-
 %
 % Sformat.
 %
-sformat(Str,Msg,Vs,Opts):- nonvar(Msg),functor_safe(Msg,':-',_),!,with_output_to_each(string(Str),
+sformat(Str,Msg,Vs,Opts):- nonvar(Msg),cfunctor(Msg,':-',_),!,with_output_to_each(string(Str),
    (current_output(CO),portray_clause_w_vars(CO,Msg,Vs,Opts))).
 sformat(Str,Msg,Vs,Opts):- with_output_to_each(chars(Codes),(current_output(CO),portray_clause_w_vars(CO,':-'(Msg),Vs,Opts))),append([_,_,_],PrintCodes,Codes),'sformat'(Str,'   ~s',[PrintCodes]),!.
 
@@ -722,12 +722,15 @@ free_of_attrs_dmsg(Term):- term_attvars(Term,Vs),!,(Vs==[]->true;maplist(free_of
 %
 
 portray_clause_w_vars(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
-portray_clause_w_vars(Out,Msg,Vs,Options):- if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!,portray_clause_w_vars2(Out,SMsg,SVs,Options).
-portray_clause_w_vars(Out,Msg,Vs,Options):- portray_clause_w_vars2(Out,Msg,Vs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!, \+ \+ portray_clause_w_vars2(Out,SMsg,SVs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ portray_clause_w_vars2(Out,Msg,Vs,Options).
  
 portray_clause_w_vars2(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
-portray_clause_w_vars2(Out,Msg,Vs,Options):- copy_term(Msg+Vs+Options,CMsg+CVs+COptions,Goals), 
-   portray_clause_w_vars5(Out,CMsg+Goals,CVs,COptions).
+portray_clause_w_vars2(Out,Msg,Vs,Options):-
+   term_attvars(Msg,AttVars),
+   copy_term(Msg+AttVars,Msg+AttVars,Goals),
+   portray_append_goals(Msg,Goals,GMsg),
+   portray_clause_w_vars5(Out,GMsg,Vs,Options).
 
 portray_clause_w_vars5(Out,Msg,Vs,Options):-
  \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
@@ -735,7 +738,10 @@ portray_clause_w_vars5(Out,Msg,Vs,Options):-
       attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
 
-
+portray_append_goals(Var,Goals,(Var,maplist(call,Goals))):-var(Var),!.
+portray_append_goals(H:-B,Goals,H:-CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
+portray_append_goals(H:B,Goals,H:CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
+portray_append_goals(Var,Goals,(Var,Goals)).
 
 %= 	 	 
 
@@ -771,7 +777,7 @@ grab_varnames2([AttV|AttVS],Vs2):-
 source_variables_lwv(Msg,AllS):-
   (prolog_load_context(variable_names,Vs1);Vs1=[]),
    grab_varnames(Msg,Vs2),
-   notrace(catch((parent_goal('$toplevel':'$execute_goal2'(_, Vs3),_);Vs3=[]),_,Vs3=[])),
+   zotrace(catch((parent_goal('$toplevel':'$execute_goal2'(_, Vs3),_);Vs3=[]),_,Vs3=[])),
    ignore(Vs3=[]),
    append(Vs3,Vs2,Vs32),append(Vs32,Vs1,All),!,list_to_set(All,AllS).
    % set_varname_list( AllS).
@@ -869,12 +875,12 @@ mesg_color(succeed(T),C):-nonvar(T),mesg_color(T,C).
 mesg_color(=(T,_),C):-nonvar(T),mesg_color(T,C).
 mesg_color(debug(T),C):-nonvar(T),mesg_color(T,C).
 mesg_color(_:T,C):-nonvar(T),!,mesg_color(T,C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[color,ansi]),compound(T),arg(1,T,C),nonvar(C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[succeed,must,mpred_op_prolog]),compound(T),arg(1,T,E),nonvar(E),!,mesg_color(E,C).
-mesg_color(T,C):-functor_safe(T,F,_),member(F,[fmt0,msg]),compound(T),arg(2,T,E),nonvar(E),!,mesg_color(E,C).
+mesg_color(T,C):-cfunctor(T,F,_),member(F,[color,ansi]),compound(T),arg(1,T,C),nonvar(C).
+mesg_color(T,C):-cfunctor(T,F,_),member(F,[succeed,must,mpred_op_prolog]),compound(T),arg(1,T,E),nonvar(E),!,mesg_color(E,C).
+mesg_color(T,C):-cfunctor(T,F,_),member(F,[fmt0,msg]),compound(T),arg(2,T,E),nonvar(E),!,mesg_color(E,C).
 mesg_color(T,C):-predef_functor_color(F,C),mesg_arg1(T,F).
 mesg_color(T,C):-nonvar(T),defined_message_color(F,C),matches_term(F,T),!.
-mesg_color(T,C):-functor(T,F,_),!,functor_color(F,C),!.
+mesg_color(T,C):-cfunctor(T,F,_),!,functor_color(F,C),!.
 
 
 
@@ -917,7 +923,7 @@ if_color_debug(Goal,UnColor):- if_color_debug->Goal;UnColor.
 
 
 color_line(C,N):- 
- notrace((
+ zotrace((
   format('~N',[]),
     forall(between(1,N,_),ansi_format([fg(C)],"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n",[])))).
 
@@ -943,9 +949,9 @@ color_line(C,N):-
 %
 % (debug)message.
 %
-dmsg(C):- notrace((tlbugger:no_slow_io,!,writeln(main_error,dmsg(C)))).
-dmsg(V):- notrace((locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))))),!.
-%dmsg(F,A):- notrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
+dmsg(C):- zotrace((tlbugger:no_slow_io,!,writeln(main_error,dmsg(C)))).
+dmsg(V):- zotrace((locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(V),logicmoo_util_catch:ddmsg(V))))),!.
+%dmsg(F,A):- zotrace((tlbugger:no_slow_io,on_x_fail(format(atom(S),F,A))->writeln(dmsg(S));writeln(dmsg_fail(F,A)))),!.
 
 :- system:import(dmsg/1).
 % system:dmsg(O):-logicmoo_util_dmsg:dmsg(O).
@@ -968,7 +974,7 @@ with_output_to_main_error(G):-
 %
 % Wdmsg.
 %
-wdmsg(X):- notrace(((current_prolog_flag(dmsg_level,never)->true;(show_source_location),
+wdmsg(X):- zotrace(((current_prolog_flag(dmsg_level,never)->true;(show_source_location),
  with_all_dmsg(dmsg(X))))),!.
 
 
@@ -995,7 +1001,7 @@ wdmsg(W,F,X):- quietly(ignore(with_all_dmsg(dmsg(W,F,X)))),!.
 %
 % Wdmsgl.
 %
-wdmsgl(X):- notrace(wdmsgl(fmt9,X)),!.
+wdmsgl(X):- zotrace(wdmsgl(fmt9,X)),!.
 wdmsgl(With,X):- (must((wdmsgl('',With,X)))),!.
 
 wdmsgl(NAME,With,CNF):- is_ftVar(CNF),!,call(With,NAME=CNF).
@@ -1054,7 +1060,7 @@ dmsg(L,F,A):-loggerReFmt(L,LR),loggerFmtReal(LR,F,A).
 %
 % (debug)message Primary Helper.
 %
-dmsg0(V):-notrace(locally(local_override(no_kif_var_coroutines,true),ignore(with_output_to_main_error(dmsg00(V))))),!.
+dmsg0(V):-zotrace(locally(local_override(no_kif_var_coroutines,true),ignore(with_output_to_main_error(dmsg00(V))))),!.
 
 %= 	 	 
 
@@ -1073,7 +1079,7 @@ dmsg00(V):- dmsg000(V),!.
 %
 dmsg000(V):-
  with_output_to_main_error(
-   (notrace(format(string(K),'~p',[V])),
+   (zotrace(format(string(K),'~p',[V])),
    (tlbugger:in_dmsg(K)-> dmsg5(V);  % format_to_error('~N% ~q~n',[dmsg0(V)]) ;
       asserta(tlbugger:in_dmsg(K),Ref),call_cleanup(dmsg1(V),erase(Ref))))),!.
 
@@ -1107,7 +1113,7 @@ dmsg2(skip_dmsg(_)):-!.
 %dmsg2(trace_or_throw(V)):- dumpST(350),dmsg(warning,V),fail.
 %dmsg2(error(V)):- dumpST(250),dmsg(warning,V),fail.
 %dmsg2(warn(V)):- dumpST(150),dmsg(warning,V),fail.
-dmsg2(Msg):-notrace((tlbugger:no_slow_io,!,dmsg3(Msg))),!.
+dmsg2(Msg):-zotrace((tlbugger:no_slow_io,!,dmsg3(Msg))),!.
 dmsg2(ansi(Ctrl,Msg)):- !, ansicall(Ctrl,dmsg3(Msg)).
 dmsg2(color(Ctrl,Msg)):- !, ansicall(Ctrl,dmsg3(Msg)).
 dmsg2(Msg):- mesg_color(Msg,Ctrl),ansicall(Ctrl,dmsg3(Msg)).
@@ -1121,7 +1127,7 @@ dmsg2(Msg):- mesg_color(Msg,Ctrl),ansicall(Ctrl,dmsg3(Msg)).
 %
 dmsg3(C):- tlbugger:no_slow_io,!,writeln(dmsg3(C)).
 dmsg3(C):- strip_module(C,_,SM),
-  ((functor_safe(SM,Topic,_),debugging(Topic,_True_or_False),logger_property(Topic,once,true),!,
+  ((cfunctor(SM,Topic,_),debugging(Topic,_True_or_False),logger_property(Topic,once,true),!,
       (dmsg_log(Topic,_Time,C) -> true ; ((get_time(Time),asserta(dmsg_log(todo,Time,C)),!,dmsg4(C)))))),!.
 
 dmsg3(C):-dmsg4(C),!.
@@ -1134,7 +1140,7 @@ dmsg3(C):-dmsg4(C),!.
 % Dmsg4.
 %
 dmsg4(_):- current_prolog_flag(dmsg_level,never),!.
-dmsg4(_):- notrace(show_source_location),fail.
+dmsg4(_):- zotrace(show_source_location),fail.
 dmsg4(Msg):-dmsg5(Msg).
 
 
@@ -1230,8 +1236,8 @@ ansifmt(Ctrl,F,A):- colormsg(Ctrl,(format(F,A))).
 %
 % Debugm.
 %
-debugm(X):-notrace((compound(X),functor(X,F,_),!,debugm(F,X))),!.
-debugm(X):-notrace((debugm(X,X))).
+debugm(X):-zotrace((compound(X),cfunctor(X,F,_),!,debugm(F,X))),!.
+debugm(X):-zotrace((debugm(X,X))).
 
 %= 	 	 
 
@@ -1240,8 +1246,8 @@ debugm(X):-notrace((debugm(X,X))).
 % Debugm.
 %
 debugm(Why,Msg):- dmsg(debugm(Why,Msg)),!,debugm0(Why,Msg).
-debugm0(Why,Msg):- notrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
-debugm0(Why,Msg):- notrace(( debug(Why,'~N~p~n',[Msg]))),!.
+debugm0(Why,Msg):- zotrace(( \+ debugging(mpred), \+ debugging(Why), \+ debugging(mpred(Why)),!, debug(Why,'~N~p~n',[Msg]))),!.
+debugm0(Why,Msg):- zotrace(( debug(Why,'~N~p~n',[Msg]))),!.
 
 
 
@@ -1262,7 +1268,7 @@ colormsg(Ctrl,Msg):- ansicall(Ctrl,fmt0(Msg)).
 %
 
 % ansicall(_,Goal):-!,Goal.
-ansicall(Ctrl,Goal):- notrace((current_output(Out), ansicall(Out,Ctrl,Goal))).
+ansicall(Ctrl,Goal):- zotrace((current_output(Out), ansicall(Out,Ctrl,Goal))).
 
 
 %= 	 	 
@@ -1328,7 +1334,7 @@ ansicall0(Out,Ctrl,Goal):-if_color_debug(ansicall1(Out,Ctrl,Goal),keep_line_pos_
 % Ansicall Secondary Helper.
 %
 ansicall1(Out,Ctrl,Goal):-
-   notrace((must(sgr_code_on_off(Ctrl, OnCode, OffCode)),!,
+   zotrace((must(sgr_code_on_off(Ctrl, OnCode, OffCode)),!,
      keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OnCode]))),
 	call_cleanup(Goal,
            keep_line_pos_w_w(Out, (format(Out, '\e[~wm', [OffCode])))))).
@@ -1406,7 +1412,7 @@ mesg_arg1(T,_TT):-var(T),!,fail.
 mesg_arg1(_:T,C):-nonvar(T),!,mesg_arg1(T,C).
 mesg_arg1(T,TT):-not(compound(T)),!,T=TT.
 mesg_arg1(T,C):-compound(T),arg(1,T,F),nonvar(F),!,mesg_arg1(F,C).
-mesg_arg1(T,F):-functor(T,F,_).
+mesg_arg1(T,F):-cfunctor(T,F,_).
 
 
 % = :- export(defined_message_color/2).
@@ -1570,7 +1576,7 @@ contrasting_color(_,default).
 % Sgr Whenever Code.
 %
 sgr_on_code(Ctrl,OnCode):- sgr_on_code0(Ctrl,OnCode),!.
-sgr_on_code(_Foo,7):-!. %  notrace((format_to_error('~NMISSING: ~q~n',[bad_sgr_on_code(Foo)]))),!.
+sgr_on_code(_Foo,7):-!. %  zotrace((format_to_error('~NMISSING: ~q~n',[bad_sgr_on_code(Foo)]))),!.
 
 
 %= 	 	 
@@ -1579,7 +1585,7 @@ sgr_on_code(_Foo,7):-!. %  notrace((format_to_error('~NMISSING: ~q~n',[bad_sgr_o
 %
 % If Is A Sgr Whenever Code.
 %
-is_sgr_on_code(Ctrl):-notrace(sgr_on_code0(Ctrl,_)),!.
+is_sgr_on_code(Ctrl):-zotrace(sgr_on_code0(Ctrl,_)),!.
 
 
 %= 	 	 
@@ -1717,7 +1723,7 @@ cls:- ignore(catch(system:shell(cls,0),_,fail)).
 
 :- ignore((source_location(S,_),prolog_load_context(module,M),module_property(M,class(library)),
  forall(source_file(M:H,S),
- ignore((functor(H,F,A),
+ ignore((cfunctor(H,F,A),
   ignore(((\+ atom_concat('$',_,F),(export(F/A) , current_predicate(system:F/A)->true; system:import(M:F/A))))),
   ignore(((\+ predicate_property(M:H,transparent), module_transparent(M:F/A), \+ atom_concat('__aux',_,F),debug(modules,'~N:- module_transparent((~q)/~q).~n',[F,A]))))))))).
 

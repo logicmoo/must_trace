@@ -88,7 +88,7 @@ stack_check_else(BreakIfOver,Call):- stack_depth(Level) ,  ( Level < BreakIfOver
 %
 % In Pengines.
 %
-in_pengines:- notrace(relative_frame(context_module,pengines,_)).
+in_pengines:- zotrace(relative_frame(context_module,pengines,_)).
 
 % ?- relative_frame(context_module,X,Y).
 :- export(relative_frame/3).
@@ -141,8 +141,8 @@ parent_goal(Goal,Nth):-  find_parent_frame_attribute(goal,Goal,Nth,_RealNth,_Fra
 %
 % Nth Parent Goal.
 %
-nth_parent_goal(Frame,Goal,Nth):- Nth>0, Nth2 is Nth-1, prolog_frame_attribute(Frame,parent,PFrame),!,notrace((nth_parent_goal(PFrame,Goal,Nth2))).
-nth_parent_goal(Frame,Goal,_):- notrace((prolog_frame_attribute(Frame,goal,Goal))),!.
+nth_parent_goal(Frame,Goal,Nth):- Nth>0, Nth2 is Nth-1, prolog_frame_attribute(Frame,parent,PFrame),!,zotrace((nth_parent_goal(PFrame,Goal,Nth2))).
+nth_parent_goal(Frame,Goal,_):- zotrace((prolog_frame_attribute(Frame,goal,Goal))),!.
 
 :- export(find_parent_frame_attribute/5).
 
@@ -187,7 +187,7 @@ current_frames(Frame,Attrib,0,NextList):- current_next_frames(Attrib,1,Frame,Nex
 %
 % Current Next Frames.
 %
-current_next_frames(Attrib,Nth,Frame,[Nth-Frame-Term|NextList]):- notrace((prolog_frame_match(Frame,Attrib,Term))), !,
+current_next_frames(Attrib,Nth,Frame,[Nth-Frame-Term|NextList]):- zotrace((prolog_frame_match(Frame,Attrib,Term))), !,
    (prolog_frame_attribute(Frame,parent,ParentFrame) -> 
     ( Nth2 is Nth+1, current_next_frames(Attrib,Nth2, ParentFrame,NextList));
          NextList=[]).

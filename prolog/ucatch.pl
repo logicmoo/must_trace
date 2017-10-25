@@ -159,7 +159,7 @@ main_self(main).
 main_self(W):-atom(W),atom_concat('pdt_',_,W),!.
 main_self(W):-lmcache:thread_main(user,W),!.
 
-thread_self_main:- notrace((thread_self(W),!,main_self(W))).
+thread_self_main:- zotrace((thread_self(W),!,main_self(W))).
 
 %% hide_non_user_console is semidet.
 %
@@ -436,7 +436,7 @@ format_to_error(F,A):-get_thread_current_error(Err),!,format(Err,F,A).
 %
 % Fresh Line Converted To Err.
 %
-fresh_line_to_err:- notrace((flush_output_safe,get_thread_current_error(Err),format(Err,'~N',[]),flush_output_safe(Err))).
+fresh_line_to_err:- zotrace((flush_output_safe,get_thread_current_error(Err),format(Err,'~N',[]),flush_output_safe(Err))).
 
 :- dynamic(lmcache:thread_current_input/2).
 :- volatile(lmcache:thread_current_input/2).
@@ -862,7 +862,7 @@ not_ftCompound(A):- \+ is_ftCompound(A).
 %
 % If Is A Format Type Variable.
 %
-is_ftVar(V):- notrace(is_ftVar0(V)).
+is_ftVar(V):- zotrace(is_ftVar0(V)).
 is_ftVar0(V):- \+ compound(V),!,var(V).
 is_ftVar0('$VAR'(_)).
 is_ftVar0('avar'(_,_)).
@@ -935,7 +935,7 @@ bad_functor(L) :- arg(_,v('|',[],':','/'),L). % .
 %
 % Warn Bad Functor.
 %
-warn_bad_functor(L):-ignore((notrace(bad_functor(L)),!,dtrace,call(ddmsg(bad_functor(L))),break)).
+warn_bad_functor(L):-ignore((zotrace(bad_functor(L)),!,dtrace,call(ddmsg(bad_functor(L))),break)).
 
 :- export(strip_f_module/2).
 
@@ -1394,7 +1394,7 @@ runtime_speed              speed of the object code
 unsafe_speedups      speed up that are possibily
 
 */
-flag_call(FlagHowValue):-notrace(flag_call0(FlagHowValue)).
+flag_call(FlagHowValue):-zotrace(flag_call0(FlagHowValue)).
 flag_call0(Flag = Quality):- compute_q_value(Quality,Value),!, set_prolog_flag(Flag,Value).
 flag_call0(FlagHowValue):- FlagHowValue=..[How,Flag,Value],
     compute_q_value(Flag,QVal),compute_q_value(Value,VValue),!,call(How,QVal,VValue).
@@ -1412,7 +1412,7 @@ flag_call0(FlagHowValue):- FlagHowValue=..[How,Flag,Value],
 :- export(skipWrapper/0).
 
 % skipWrapper:-!.
-skipWrapper:- notrace((ucatch:skipWrapper0)).
+skipWrapper:- zotrace((ucatch:skipWrapper0)).
 % skipWrapper:- tracing,!.
 
 skipWrapper0:- current_prolog_flag(bugger,false),!.
@@ -1604,7 +1604,7 @@ need_speed:-current_prolog_flag(unsafe_speedups , true) .
 is_release:- current_prolog_flag(unsafe_speedups, false) ,!,fail.
 is_release:- !,fail.
 is_release:- current_prolog_flag(unsafe_speedups , true) ,!.
-is_release:- notrace((\+ flag_call(runtime_debug == true) , \+ (1 is random(4)))).
+is_release:- zotrace((\+ flag_call(runtime_debug == true) , \+ (1 is random(4)))).
 
 
 
@@ -1660,7 +1660,7 @@ y_must(Y,Goal):- catchv(Goal,E,(wdmsg(E:must_xI__xI__xI__xI__xI_(Y,Goal)),fail))
 %=
 
 
-dumpST_error(Msg):- notrace((ddmsg(error,Msg),dumpST,wdmsg(error,Msg))).
+dumpST_error(Msg):- zotrace((ddmsg(error,Msg),dumpST,wdmsg(error,Msg))).
 
 
 :- thread_self_main.

@@ -1223,7 +1223,7 @@ show_failure(Why,Goal):-one_must(dcall0(Goal),(debugm(Why,sc_failed(Why,Goal)),!
 %
 % Show Failure.
 %
-show_failure(Goal):- show_failure(mpred,Goal).
+show_failure(Goal):- strip_module(Goal,Why,_), show_failure(mpred(Why),Goal).
 
 
 %% show_success( +Why, :Goal) is semidet.
@@ -1815,7 +1815,7 @@ on_x_rtraceEach(Goal):-with_each(1,on_x_debug,Goal).
 % If there If Is A an exception in  :Goal Class then r Trace.
 %
 on_x_debug(C):- !,
- notrace(((skipWrapper;tracing;(tlbugger:rtracing)),maybe_leash(+exception))) -> C;
+ zotrace(((skipWrapper;tracing;(tlbugger:rtracing)),maybe_leash(+exception))) -> C;
    catchv(C,E,
      (wdmsg(on_x_debug(E)),catchv(rtrace(with_skip_bugger(C)),E,wdmsg(E)),dtrace(C))).
 % on_x_debug(Goal):- with_each(0,on_x_debug,Goal).
@@ -4382,7 +4382,7 @@ must(Goal):- Goal*->true;prolog_debug:assertion_failed(fail, must(Goal)).
 % like assertion/1 but adds trace control
 %
 /*
-sanity(_):- notrace(current_prolog_flag(runtime_safety,0)),!.
+sanity(_):- zotrace(current_prolog_flag(runtime_safety,0)),!.
 
 sanity(Goal):- \+ tracing,
    \+ current_prolog_flag(runtime_safety,3),
@@ -4390,7 +4390,7 @@ sanity(Goal):- \+ tracing,
    (current_prolog_flag(runtime_speed,S),S>1),
    !,                                                       
    (1 is random(10)-> must(Goal) ; true).
-sanity(Goal):- notrace(quietly(Goal)),!.
+sanity(Goal):- zotrace(quietly(Goal)),!.
 sanity(_):- dumpST,fail.
 sanity(Goal):- tlbugger:show_must_go_on,!,dmsg(show_failure(sanity(Goal))).
 sanity(Goal):- setup_call_cleanup(wdmsg(begin_FAIL_in(Goal)),rtrace(Goal),wdmsg(end_FAIL_in(Goal))),!,dtrace(assertion(Goal)).
@@ -4457,10 +4457,10 @@ X = 3.
 */
 
 scce_orig(Setup0,Goal,Cleanup0):-
-  notrace((Cleanup = notrace('$sig_atomic'(Cleanup0)),Setup = notrace('$sig_atomic'(Setup0)))),
+  zotrace((Cleanup = zotrace('$sig_atomic'(Cleanup0)),Setup = zotrace('$sig_atomic'(Setup0)))),
    \+ \+ Setup, !,
    (catch(Goal, E,(Cleanup,throw(E)))
-      *-> (notrace(tracing)->(notrace,deterministic(DET));deterministic(DET)); (Cleanup,!,fail)),
+      *-> (zotrace(tracing)->(notrace,deterministic(DET));deterministic(DET)); (Cleanup,!,fail)),
      Cleanup,
      (DET == true -> ! ; (true;(Setup,fail))).
       
@@ -4553,9 +4553,9 @@ prolog_may(Call):-prolog_ecall(debugOnError,Call).
 prolog_must_tracing(Call):-!, Call.
 prolog_must_tracing(Call):- notrace,prolog_ecall(prolog_must_tracing0,Call).   
 prolog_must_tracing0(Call):- 
-   notrace((trace(Call,Before),trace(Call,[-all,+fail,+exit]))), 
+   zotrace((trace(Call,Before),trace(Call,[-all,+fail,+exit]))), 
    atLeastOne(Call,(trace,Call)), 
-   notrace(trace(Call,Before)).
+   zotrace(trace(Call,Before)).
  
 
 
@@ -4891,7 +4891,7 @@ assert_if_new(N):-assert(N),!.
 % =================================================================================
 test_call(G):-writeln(G),ignore(once(catch(G,E,writeln(E)))).
  
-debugFmtList(ListI):-notrace((copy_term(ListI,List),debugFmtList0(List,List0),randomVars(List0),dmsg(List0))),!.
+debugFmtList(ListI):-zotrace((copy_term(ListI,List),debugFmtList0(List,List0),randomVars(List0),dmsg(List0))),!.
 debugFmtList0([],[]):-!.
 debugFmtList0([A|ListA],[B|ListB]):-debugFmtList1(A,B),!,debugFmtList0(ListA,ListB),!.
  
@@ -6226,7 +6226,7 @@ one_must(MCall,OnFail):-  call(MCall) *->  true ; call(OnFail).
 %
 % Must Be Successfull Deterministic.
 %
-must_det_u(Goal):- !,maybe_notrace(Goal),!.
+must_det_u(Goal):- !,(Goal),!.
 must_det_u(Goal):- Goal->true;ignore(rtrace(Goal)).
 
 
@@ -7232,7 +7232,7 @@ dmsg(V):- locally(set_prolog_flag(retry_undefined,none), if_defined_local(dmsg0(
 %dmsg(T):- isDebugOption(opt_debug=off),!.
 dmsg(StuffIn):-copy_term(StuffIn,Stuff), randomVars(Stuff),!,dmsg('% ~q~n',[Stuff]).
 %:- abolish(dmsg/1).
-%dmsg(Stuff):- notrace((debugFmtS(Stuff))),!.
+%dmsg(Stuff):- zotrace((debugFmtS(Stuff))),!.
 
 dmsg(T):-!,
     ((
@@ -8546,8 +8546,8 @@ hotrace(Goal):-!,call(Goal).
 hotrace(Goal):-
    ((tracing,notrace )-> Tracing = trace ;   Tracing = true),
    '$leash'(OldL, OldL),'$visible'(OldV, OldV),
-   (Undo =   notrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
-   (RTRACE = notrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
+   (Undo =   zotrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
+   (RTRACE = zotrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
    scce_orig(RTRACE,(notrace,Goal),Undo).
 
 
@@ -8601,8 +8601,8 @@ push_tracer_and_notrace:- notrace,push_tracer,notrace.
 % rtrace(Goal):- quietly(tl_rtrace:rtracing),!,call(Goal).
 rtrace(Goal):- !,scce_orig(rtrace,(trace,Goal),stop_rtrace).
 /*
-rtrace(Goal):- !,scce_orig(notrace(start_rtrace),call((notrace(rtrace),Goal)),notrace(stop_rtrace)).
-rtrace(Goal):- tracing,!,setup_call_cleanup(start_rtrace,call(Goal),notrace(stop_rtrace)).
+rtrace(Goal):- !,scce_orig(zotrace(start_rtrace),call((zotrace(rtrace),Goal)),zotrace(stop_rtrace)).
+rtrace(Goal):- tracing,!,setup_call_cleanup(start_rtrace,call(Goal),zotrace(stop_rtrace)).
 rtrace(Goal):- \+ tracing,start_rtrace,!,setup_call_cleanup(trace,call(Goal),(notrace,stop_rtrace)).
 rtrace(Goal):- 
   ((tracing,notrace )-> Tracing = trace ;   Tracing = true),
@@ -8655,7 +8655,7 @@ rtrace(Goal):-
 :- maybe_hide(system:notrace/0).
 :- maybe_hide(system:tracing/0).
 
-%:- ( listing(hotrace/1),redefine_system_predicate(system:notrace(_)), mpred_trace_none(hotrace(0)) ).
+%:- ( listing(hotrace/1),redefine_system_predicate(system:zotrace(_)), mpred_trace_none(hotrace(0)) ).
 % :- if_may_hide('$hide'(hotrace/1)).
 % :- if_may_hide('$hide'(hotrace/1,  hide_childs, 1)).
 
@@ -8666,7 +8666,7 @@ rtrace(Goal):-
 % If there If Is A an exception in  :Goal Class then r Trace.
 %
 on_x_debug(C):- !,
- notrace(((skipWrapper;tracing;(tl_rtrace:rtracing)),maybe_leash(+exception))) -> C;
+ zotrace(((skipWrapper;tracing;(tl_rtrace:rtracing)),maybe_leash(+exception))) -> C;
    catchv(C,E,
      (wdmsg(on_x_debug(E)),catchv(rtrace(with_skip_bugger(C)),E,wdmsg(E)),dtrace(C))).
 on_x_debug(Goal):- with_each(0,on_x_debug,Goal).
@@ -8675,22 +8675,22 @@ on_x_debug(Goal):- with_each(0,on_x_debug,Goal).
 
 /*
 
-rtrace(Goal):- notrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
-   (scce_orig(trace,Goal,stop_rtrace)*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+rtrace(Goal):- zotrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
+   (scce_orig(trace,Goal,stop_rtrace)*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 rtrace(Goal):- 
   setup_call_cleanup(
   ('$leash'(OldL, OldL),'$visible'(OldV, OldV),start_rtrace),
    scce_orig(start_rtrace,Goal,stop_rtrace),
    (notrace,set_leash_vis(OldL,OldV))).
 
-rtrace(Goal):- notrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
-   (Goal*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+rtrace(Goal):- zotrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
+   (Goal*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 
 rtrace(Goal):- '$leash'(OldL, OldL),'$visible'(OldV, OldV),start_rtrace,!,
-   (Goal*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+   (Goal*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 
-rtrace(Goal):- notrace(tracing),!, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),notrace(stop_rtrace))).
-rtrace(Goal):- !, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),notrace(stop_rtrace))).
+rtrace(Goal):- zotrace(tracing),!, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),zotrace(stop_rtrace))).
+rtrace(Goal):- !, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),zotrace(stop_rtrace))).
 
 rtrace(Goal):-
   push_tracer,!,rtrace,trace,
@@ -8779,8 +8779,8 @@ hotrace(Goal):-!,call(Goal).
 hotrace(Goal):-
    ((tracing,notrace )-> Tracing = trace ;   Tracing = true),
    '$leash'(OldL, OldL),'$visible'(OldV, OldV),
-   (Undo =   notrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
-   (RTRACE = notrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
+   (Undo =   zotrace(((notrace,'$leash'(_, OldL),'$visible'(_, OldV), Tracing)))),
+   (RTRACE = zotrace((visible(-all),visible(+exception),maybe_leash(-all),maybe_leash(+exception)))),!,
    scce_orig(RTRACE,(notrace,Goal),Undo).
 
 
@@ -8834,8 +8834,8 @@ push_tracer_and_notrace:- notrace,push_tracer,notrace.
 % rtrace(Goal):- quietly(tl_rtrace:rtracing),!,call(Goal).
 rtrace(Goal):- !,scce_orig(rtrace,(trace,Goal),stop_rtrace).
 /*
-rtrace(Goal):- !,scce_orig(notrace(start_rtrace),call((notrace(rtrace),Goal)),notrace(stop_rtrace)).
-rtrace(Goal):- tracing,!,setup_call_cleanup(start_rtrace,call(Goal),notrace(stop_rtrace)).
+rtrace(Goal):- !,scce_orig(zotrace(start_rtrace),call((zotrace(rtrace),Goal)),zotrace(stop_rtrace)).
+rtrace(Goal):- tracing,!,setup_call_cleanup(start_rtrace,call(Goal),zotrace(stop_rtrace)).
 rtrace(Goal):- \+ tracing,start_rtrace,!,setup_call_cleanup(trace,call(Goal),(notrace,stop_rtrace)).
 rtrace(Goal):- 
   ((tracing,notrace )-> Tracing = trace ;   Tracing = true),
@@ -8888,7 +8888,7 @@ rtrace(Goal):-
 :- maybe_hide(system:notrace/0).
 :- maybe_hide(system:tracing/0).
 
-%:- ( listing(hotrace/1),redefine_system_predicate(system:notrace(_)), mpred_trace_none(hotrace(0)) ).
+%:- ( listing(hotrace/1),redefine_system_predicate(system:zotrace(_)), mpred_trace_none(hotrace(0)) ).
 % :- if_may_hide('$hide'(hotrace/1)).
 % :- if_may_hide('$hide'(hotrace/1,  hide_childs, 1)).
 
@@ -8899,7 +8899,7 @@ rtrace(Goal):-
 % If there If Is A an exception in  :Goal Class then r Trace.
 %
 on_x_debug(C):- !,
- notrace(((skipWrapper;tracing;(tl_rtrace:rtracing)),maybe_leash(+exception))) -> C;
+ zotrace(((skipWrapper;tracing;(tl_rtrace:rtracing)),maybe_leash(+exception))) -> C;
    catchv(C,E,
      (wdmsg(on_x_debug(E)),catchv(rtrace(with_skip_bugger(C)),E,wdmsg(E)),dtrace(C))).
 on_x_debug(Goal):- with_each(0,on_x_debug,Goal).
@@ -8908,22 +8908,22 @@ on_x_debug(Goal):- with_each(0,on_x_debug,Goal).
 
 /*
 
-rtrace(Goal):- notrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
-   (scce_orig(trace,Goal,stop_rtrace)*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+rtrace(Goal):- zotrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
+   (scce_orig(trace,Goal,stop_rtrace)*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 rtrace(Goal):- 
   setup_call_cleanup(
   ('$leash'(OldL, OldL),'$visible'(OldV, OldV),start_rtrace),
    scce_orig(start_rtrace,Goal,stop_rtrace),
    (notrace,set_leash_vis(OldL,OldV))).
 
-rtrace(Goal):- notrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
-   (Goal*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+rtrace(Goal):- zotrace((tracing,'$leash'(OldL, OldL),'$visible'(OldV, OldV))),start_rtrace,!,
+   (Goal*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 
 rtrace(Goal):- '$leash'(OldL, OldL),'$visible'(OldV, OldV),start_rtrace,!,
-   (Goal*-> set_leash_vis(OldL,OldV) ; notrace((set_leash_vis(OldL,OldV),!,fail))).
+   (Goal*-> set_leash_vis(OldL,OldV) ; zotrace((set_leash_vis(OldL,OldV),!,fail))).
 
-rtrace(Goal):- notrace(tracing),!, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),notrace(stop_rtrace))).
-rtrace(Goal):- !, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),notrace(stop_rtrace))).
+rtrace(Goal):- zotrace(tracing),!, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(stop_rtrace,!,fail)),zotrace(stop_rtrace))).
+rtrace(Goal):- !, restore_trace(scce_orig(start_rtrace,(Goal*->notrace;(notrace,!,nortrace,fail)),zotrace(stop_rtrace))).
 
 rtrace(Goal):-
   push_tracer,!,rtrace,trace,

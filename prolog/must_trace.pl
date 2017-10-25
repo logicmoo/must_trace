@@ -101,6 +101,7 @@ must_keep_going(Goal):- set_prolog_flag(debug_on_error,false),
 
 
 xnotrace(G):- G,!.
+:- '$hide'(xnotrace/2).
 
 %! sanity(:Goal) is det.
 %
@@ -118,7 +119,7 @@ sanity(Goal):- \+ tracing,
    !,
    (1 is random(10)-> must(Goal) ; true).
 sanity(Goal):- quietly(Goal),!.
-sanity(_):- dumpST,fail.
+sanity(_):- break, dumpST,fail.
 sanity(Goal):- tlbugger:show_must_go_on,!,dmsg(show_failure(sanity,Goal)).
 sanity(Goal):- setup_call_cleanup(wdmsg(begin_FAIL_in(Goal)),rtrace(Goal),wdmsg(end_FAIL_in(Goal))),!,dtrace(assertion(Goal)).
 

@@ -76,6 +76,15 @@
 :- use_module(library(lists)).
 
 
+:- export(cnas/3).
+
+% cnas(A,B,C):- compound_name_args_safe(A,B,C).
+cnas(A,B,C):- compound(A)-> compound_name_arguments(A,B,C);( A=..[B|C]).
+cfunctor(A,B,C):- compound(A)->compound_name_arity(A,B,C);functor(A,B,C).
+
+:- system:import(cnas/3).
+:- system:import(cfunctor/3).
+
 
 oo_get_attr(V,A,Value):- var(V),!,get_attr(V,A,Value),!.
 oo_get_attr('$VAR'(Name),N,V):- atom(Name),!,N=vn,V=Name.
@@ -294,12 +303,12 @@ if_may_hide(G):-G.
 %
 % Using Unlocked Predicate.
 %
-with_unlocked_pred(Pred,Goal):-
+with_unlocked_pred(MP,Goal):- strip_module(MP,M,P),Pred=M:P,
    (predicate_property(Pred,foreign)-> true ;
   (
  ('$get_predicate_attribute'(Pred, system, 0) -> Goal ;
- ('$set_predicate_attribute'(Pred, system, 0),
-   catch(Goal,_,true),'$set_predicate_attribute'(Pred, system, 1))))).
+ setup_call_cleanup('$set_predicate_attribute'(Pred, system, 0),
+   catch(Goal,E,throw(E)),'$set_predicate_attribute'(Pred, system, 1))))).
 
 
 on_xf_cont(Goal):- ignore(catch(Goal,_,true)).
@@ -340,7 +349,7 @@ mpred_trace_none(W):- (forall(match_predicates(W,M,Pred,F,A),
 mpred_trace_nochilds(W):- if_may_hide(forall(match_predicates(W,M,Pred,_,_),(
 with_unlocked_pred(M:Pred,(
 '$set_predicate_attribute'(M:Pred, trace, 1),
-'$set_predicate_attribute'(M:Pred, noprofile, 0),
+%'$set_predicate_attribute'(M:Pred, noprofile, 0),
 '$set_predicate_attribute'(M:Pred, hide_childs, 1)))))).
 
 :- export(mpred_trace_childs/1).
@@ -354,7 +363,7 @@ with_unlocked_pred(M:Pred,(
 mpred_trace_childs(W) :- if_may_hide(forall(match_predicates(W,M,Pred,_,_),(
 with_unlocked_pred(M:Pred,(
 '$set_predicate_attribute'(M:Pred, trace, 0),
-'$set_predicate_attribute'(M:Pred, noprofile, 1),
+%'$set_predicate_attribute'(M:Pred, noprofile, 0),
 '$set_predicate_attribute'(M:Pred, hide_childs, 0)))))).   
 
 
@@ -367,7 +376,7 @@ with_unlocked_pred(M:Pred,(
 mpred_trace_all(W) :- forall(match_predicates(W,M,Pred,_,A),( 
  with_unlocked_pred(M:Pred,(
  (A==0 -> '$set_predicate_attribute'(M:Pred, trace, 0);'$set_predicate_attribute'(M:Pred, trace, 1)),
- '$set_predicate_attribute'(M:Pred, noprofile, 0),
+ % '$set_predicate_attribute'(M:Pred, noprofile, 0),
 '$set_predicate_attribute'(M:Pred, hide_childs, 0))))).
 
 %:-mpred_trace_all(prolog:_).
@@ -457,8 +466,22 @@ add_var_to_list(Name,Var,Vs,NewName,NewVar,NewVs):-
 %
 % Unnumbervars.
 %
-unnumbervars(X,Y):- must(notrace(unnumbervars_and_save(X,Y))).
+unnumbervars(X,Y):- must(zotrace(unnumbervars_and_save(X,Y))).
 
+zotrace(G):- notrace(tracing)->notrace(G);call(G).
+:- '$hide'(zotrace/1).
+:- '$set_predicate_attribute'(zotrace/1, hide_childs, true).
+
+first_scce_orig(Setup0,Goal,Cleanup0):-
+  notrace((Cleanup = notrace('$sig_atomic'(Cleanup0)),Setup = notrace('$sig_atomic'(Setup0)))),
+    notrace(Setup), !,
+   (catch(Goal, E,(Cleanup,throw(E)))
+      *-> (notrace(tracing)->(notrace,deterministic(DET),trace);deterministic(DET)); notrace((Cleanup,!,fail))),
+     Cleanup,
+     (notrace(DET == true) -> ! ; (true;(Setup,notrace(fail)))).
+
+zzotrace(G):- notrace(\+ tracing)->call(G) ; first_scce_orig(notrace,G,trace).
+:- '$hide'(zzotrace/1).
 
 put_variable_names(NewVs):-  check_variable_names(NewVs,Checked),call(b_setval,'$variable_names',Checked).
 nput_variable_names(NewVs):- check_variable_names(NewVs,Checked),call(nb_setval,'$variable_names',Checked).
@@ -473,7 +496,7 @@ check_variable_names(I,O):- (\+ (member(N=_,I),var(N)) -> O=I ;
 % Unnumbervars And Save.
 %
 
-unnumbervars_and_save(X,YO):- must(notrace(unnumbervars4(X,[],_,YO))),!.
+unnumbervars_and_save(X,YO):- must(zotrace(unnumbervars4(X,[],_,YO))),!.
 % unnumbervars_and_save(X,YO):- \+ ((sub_term(V,X),compound(V),'$VAR'(_)=V)),!,YO=X.
 
 /*
