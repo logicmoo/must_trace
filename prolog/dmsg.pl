@@ -863,7 +863,7 @@ indent_to_spaces(N,Out):- N2 is N div 2, indent_to_spaces(N2,Spaces),atom_concat
 mesg_color(_,[reset]):-tlbugger:no_slow_io,!.
 mesg_color(T,C):-var(T),!,C=[blink(slow),fg(red),hbg(black)],!.
 mesg_color(T,C):- if_defined(is_sgr_on_code(T)),!,C=T.
-mesg_color(T,C):-cyclic_term(T),!,C=reset.
+mesg_color(T,C):-cyclic_term(T),!,C=[reset,blink(slow),bold].
 mesg_color("",C):- !,C=[blink(slow),fg(red),hbg(black)],!.
 mesg_color(T,C):- string(T),!,must(f_word(T,F)),!,functor_color(F,C).
 mesg_color([_,_,_,T|_],C):-atom(T),mesg_color(T,C).
@@ -875,6 +875,8 @@ mesg_color(succeed(T),C):-nonvar(T),mesg_color(T,C).
 mesg_color(=(T,_),C):-nonvar(T),mesg_color(T,C).
 mesg_color(debug(T),C):-nonvar(T),mesg_color(T,C).
 mesg_color(_:T,C):-nonvar(T),!,mesg_color(T,C).
+mesg_color(:- T,C):-nonvar(T),!,mesg_color(T,C).
+mesg_color(H :- T, [bold|C]):-nonvar(T),!,mesg_color(H,C).
 mesg_color(T,C):-cfunctor(T,F,_),member(F,[color,ansi]),compound(T),arg(1,T,C),nonvar(C).
 mesg_color(T,C):-cfunctor(T,F,_),member(F,[succeed,must,mpred_op_prolog]),compound(T),arg(1,T,E),nonvar(E),!,mesg_color(E,C).
 mesg_color(T,C):-cfunctor(T,F,_),member(F,[fmt0,msg]),compound(T),arg(2,T,E),nonvar(E),!,mesg_color(E,C).
@@ -1085,13 +1087,17 @@ dmsg000(V):-
 
 % = :- export(dmsg1/1).
 
+
+univ_safe_2(A,B):- compound(A),compound_name_arity(A,F,0),!,F=..B.
+univ_safe_2(A,B):- A=..B.
+
 %= 	 	 
 
 %% dmsg1( ?V) is det.
 %
 % (debug)message Secondary Helper.
 %
-dmsg1(V):- tlbugger:is_with_dmsg(FP),!,FP=..FPL,append(FPL,[V],VVL),VV=..VVL,once(dmsg1(VV)).
+dmsg1(V):- tlbugger:is_with_dmsg(FP),!,univ_safe_2(FP,FPL),append(FPL,[V],VVL),univ_safe_2(VV,VVL),once(dmsg1(VV)).
 dmsg1(_):- current_prolog_flag(dmsg_level,never),!.
 dmsg1(V):- var(V),!,dmsg1(warn(dmsg_var(V))).
 dmsg1(NC):- cyclic_term(NC),!,dtrace,format_to_error('~N% ~q~n',[dmsg_cyclic_term_1]).

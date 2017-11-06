@@ -1254,7 +1254,7 @@ to_list_of(_,[Rest],Rest):-!.
 to_list_of(RL,[R|Rest],LList):-
       to_list_of(RL,R,L),
       to_list_of(RL,Rest,List),
-      LList=..[RL,L,List],!.
+      univ_safe_2(LList,[RL,L,List]),!.
 
 % ===================================================
 
@@ -1980,7 +1980,7 @@ on_x_debug_cont(Goal):-ignore(on_x_debug(Goal)).
 %
 % Using Each.
 %
-with_each(WrapperGoal):- WrapperGoal=..[Wrapper,Goal],with_each(Wrapper,Goal).
+with_each(WrapperGoal):- univ_safe_2(WrapperGoal,[Wrapper,Goal]),with_each(Wrapper,Goal).
 
 
 
@@ -2280,9 +2280,9 @@ prolog_ecall_fa(BDepth,Wrapper,F,1,Call):-
 % A>1 , (unwrap = true )
 prolog_ecall_fa(BDepth,Wrapper,F,A,Call):-
   on_prolog_ecall(F,A,unwrap,true),!,
-  Call=..[F|OArgs],
+  univ_safe_2(Call,[F|OArgs]),
   functor_safe(Copy,F,A),
-  Copy=..[F|NArgs],
+  univ_safe_2(Copy,[F|NArgs]),
   replace_elements(OArgs,E,with_each(BDepth,Wrapper,E),NArgs),
   call(Copy).
 

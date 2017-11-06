@@ -1202,10 +1202,10 @@ nd_dbgsubst(  P, Goal,Sk, P1 ) :- functor_safe(P,_,N),nd_dbgsubst1( Goal, Sk, P,
 % Nd Dbgsubst Secondary Helper.
 %
 nd_dbgsubst1( _,  _, P, 0, P  ).
-nd_dbgsubst1( Goal, Sk, P, N, P1 ) :- N > 0, P =.. [F|Args],
+nd_dbgsubst1( Goal, Sk, P, N, P1 ) :- N > 0,univ_safe_2( P, [F|Args]),
             nd_dbgsubst2( Goal, Sk, Args, ArgS ),
             nd_dbgsubst2( Goal, Sk, [F], [FS] ),
-            P1 =.. [FS|ArgS].
+            univ_safe_2(P1 , [FS|ArgS]).
 
 
 %=
@@ -1396,7 +1396,7 @@ unsafe_speedups      speed up that are possibily
 */
 flag_call(FlagHowValue):-zotrace(flag_call0(FlagHowValue)).
 flag_call0(Flag = Quality):- compute_q_value(Quality,Value),!, set_prolog_flag(Flag,Value).
-flag_call0(FlagHowValue):- FlagHowValue=..[How,Flag,Value],
+flag_call0(FlagHowValue):- univ_safe_2(FlagHowValue,[How,Flag,Value]),
     compute_q_value(Flag,QVal),compute_q_value(Value,VValue),!,call(How,QVal,VValue).
 
 
@@ -1448,8 +1448,10 @@ one_must(MCall,OnFail):-  call(MCall) *->  true ; call(OnFail).
 %
 % Must Be Successfull Deterministic.
 %
-must_det_u(Goal):- !,maybe_notrace(Goal),!.
-must_det_u(Goal):- Goal->true;ignore(rtrace(Goal)).
+
+%must_det_u(Goal):- !,maybe_notrace(Goal),!.
+must_det_u(Goal):- must(Goal),!.
+%must_det_u(Goal):- Goal->true;ignore(rtrace(Goal)).
 
 
 %=
@@ -1693,7 +1695,7 @@ ge_expand_goal(G,GO):- expand_goal(G,GO).
 % ge_must_sanity(sanity(Goal),nop(sanity(GoalO))):- ge_expand_goal(Goal,GoalO).
 % ge_must_sanity(must(Goal),(GoalO*->true;debugCallWhy(failed_must(Goal,FL),GoalO))):- source_ctx(FL),ge_expand_goal(Goal,GoalO).
 
-ge_must_sanity(P,O):- P=..[F,Arg],nonvar(Arg),ge_must_sanity(F,Arg,O).
+ge_must_sanity(P,O):- univ_safe_2(P,[F,Arg]),nonvar(Arg),ge_must_sanity(F,Arg,O).
 
 ge_must_sanity(sanity,Goal,sanity2(FL,Goal)):- source_ctx(FL).
 ge_must_sanity(must,Goal,must2(FL,Goal)):- source_ctx(FL).

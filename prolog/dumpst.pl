@@ -158,7 +158,7 @@ dumpST(Depth):- zotrace((prolog_current_frame(Frame),b_setval('$dump_frame',Fram
 %
 % Get Module Opt.
 %
-get_m_opt(Opts,Max_depth,D100,RetVal):-E=..[Max_depth,V],(((member(E,Opts),nonvar(V)))->RetVal=V;RetVal=D100).
+get_m_opt(Opts,Max_depth,D100,RetVal):- univ_safe_2(E,[Max_depth,V]),(((member(E,Opts),nonvar(V)))->RetVal=V;RetVal=D100).
 
 
 
@@ -408,7 +408,7 @@ simplify_goal_printed(must_det_lm(M,G),GS):-!,simplify_goal_printed(M:must_det_l
 simplify_goal_printed(call(G),GS):-!,simplify_goal_printed(G,GS).
 simplify_goal_printed(M:G,MS:GS):-atom(M), simplify_m(M,MS),!,simplify_goal_printed(G,GS).
 simplify_goal_printed([F|A],[FS|AS]):- !,simplify_goal_printed(F,FS),simplify_goal_printed(A,AS).
-simplify_goal_printed(G,GS):- G=..[F|A],maplist(simplify_goal_printed,[F|A],AA),GS=..AA.
+simplify_goal_printed(G,GS):- univ_safe_2(G,[F|A]),maplist(simplify_goal_printed,[F|A],AA),univ_safe_2(GS,AA).
 
 
 

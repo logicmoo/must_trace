@@ -75,7 +75,7 @@ on_x_debug(Goal):-
    (predicate_property(Pred,foreign)-> true ;
   (
  ('$get_predicate_attribute'(Pred, system, OnOff)->true;throw('$get_predicate_attribute'(Pred, system, OnOff))),
- (OnOff==0 -> Goal ;
+ (==(OnOff,0) -> Goal ;
  setup_call_cleanup('$set_predicate_attribute'(Pred, system, 0),
    catch(Goal,E,throw(E)),'$set_predicate_attribute'(Pred, system, 1))))).
 

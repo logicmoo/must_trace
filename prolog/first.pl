@@ -663,10 +663,10 @@ renumbervars1([X|XM],IVs,[Y|YM],Vs):-!,
   renumbervars1(X,IVs,Y,VsM),
   renumbervars1(XM,VsM,YM,Vs).
 renumbervars1(XXM,IVs,YYM,Vs):-
-  XXM=..[F,X|XM],
+  univ_safe_2(XXM,[F,X|XM]),
   renumbervars1(X,IVs,Y,VsM),
   renumbervars1(XM,VsM,YM,Vs),
-  YYM=..[F,Y|YM].
+  univ_safe_2(YYM,[F,Y|YM]).
 
 
 

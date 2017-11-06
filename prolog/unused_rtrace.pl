@@ -5983,7 +5983,7 @@ nd_dbgsubst1( _,  _, P, 0, P  ).
 nd_dbgsubst1( Goal, Sk, P, N, P1 ) :- N > 0, P =.. [F|Args],
             nd_dbgsubst2( Goal, Sk, Args, ArgS ),
             nd_dbgsubst2( Goal, Sk, [F], [FS] ),
-            P1 =.. [FS|ArgS].
+            univ_safe_2(P1,[FS|ArgS]).
 
 
 %=
