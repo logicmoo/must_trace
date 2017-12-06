@@ -500,10 +500,11 @@ new_line_if_needed:- flush_output,format('~N',[]),flush_output.
 %
 fmt9(Msg):- new_line_if_needed, must(fmt90(Msg)),!,new_line_if_needed.
 
-fmt90(fmt0(F,A)):-on_x_fail(fmt0(F,A)).
-fmt90(Msg):- on_x_fail(((string(Msg);atom(Msg)),format(Msg,[fmt90_x1,fmt90_x2,fmt90_x3]))).
-fmt90(Msg):- on_x_fail((with_output_to(string(S),on_x_fail(if_defined_local(portray_clause_w_vars(Msg),fail))),format('~s',[S]))).
-fmt90(Msg):- on_x_fail(format('~p',[Msg])).
+fmt90(fmt0(F,A)):-on_x_fail(fmt0(F,A)),!.
+fmt90(Msg):- on_x_fail(((string(Msg)),format(Msg,[fmt90_x1,fmt90_x2,fmt90_x3]))),!.
+fmt90(Msg):- on_x_fail((with_output_to(string(S),
+   on_x_fail(if_defined_local(portray_clause_w_vars(Msg),fail))),format('~s',[S]))),!.
+fmt90(Msg):- on_x_fail(format('~p.',[Msg])),!.
 fmt90(Msg):- writeq(fmt9(Msg)).
 
 % :-reexport(library(ansi_term)).
@@ -738,10 +739,12 @@ portray_clause_w_vars5(Out,Msg,Vs,Options):-
       attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
 
+portray_append_goals(Var,Goals,Var):- Goals==[],!.
+portray_append_goals(Var,Goals,Var):- Goals==true,!.
 portray_append_goals(Var,Goals,(Var,maplist(call,Goals))):-var(Var),!.
 portray_append_goals(H:-B,Goals,H:-CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
 portray_append_goals(H:B,Goals,H:CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
-portray_append_goals(Var,Goals,(Var,Goals)).
+portray_append_goals(Var,Goals,(Var,maplist(call,Goals))).
 
 %= 	 	 
 
