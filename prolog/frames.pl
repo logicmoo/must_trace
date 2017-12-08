@@ -177,8 +177,9 @@ prolog_frame_match(Frame,Attrib,Term):-prolog_frame_attribute(Frame,Attrib,Term)
 %
 % Current Frames.
 %
-current_frames(Frame,Attrib,N,NextList):- N>0, N2 is N-1,prolog_frame_attribute(Frame,parent,ParentFrame),!,current_frames(ParentFrame,Attrib,N2,NextList).
-current_frames(Frame,Attrib,0,NextList):- current_next_frames(Attrib,1,Frame,NextList).
+current_frames(Frame,Attrib,N,NextList):- notrace(current_frames0(Frame,Attrib,N,NextList)).
+current_frames0(Frame,Attrib,N,NextList):- N>0, N2 is N-1,prolog_frame_attribute(Frame,parent,ParentFrame),!,current_frames0(ParentFrame,Attrib,N2,NextList).
+current_frames0(Frame,Attrib,0,NextList):- current_next_frames(Attrib,1,Frame,NextList).
 
 
 %= 	 	 
