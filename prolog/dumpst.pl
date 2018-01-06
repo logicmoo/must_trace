@@ -311,13 +311,20 @@ fdmsg1(level=L):-'format'('(~q)',[L]),!.
 fdmsg1(context_module=G):- simplify_m(G,M),!,if_defined_mesg_color(G,Ctrl),ansicall(Ctrl,format('[~w]',[M])),!.
 fdmsg1(has_alternatives=G):- (G==false->true;'format'('*',[G])),!.
 fdmsg1(hidden=G):- (G==false->true;'format'('$',[G])),!.
-fdmsg1(goal=G):-simplify_goal_printed(G,GG),!,if_defined_mesg_color(GG,Ctrl),ansicall(Ctrl,format(' ~q. ',[GG])),!.
+fdmsg1(goal=G):- do_fdmsg1(G).
 fdmsg1(clause=[F,L]):- directory_file_path(_,FF,F),'format'('  %  ~w:~w: ',[FF,L]),!.
 fdmsg1(clause=[F,L]):- fresh_line,'format'('%  ~w:~w: ',[F,L]),!.
 fdmsg1(clause=[]):-'format'(' /*DYN*/ ',[]),!.
 fdmsg1(G):- if_defined_mesg_color(G,Ctrl),ansicall(Ctrl,format(' ~q ',[G])),!.
 fdmsg1(M):-dmsg(failed_fdmsg1(M)).
 
+do_fdmsg1(G):- 
+  simplify_goal_printed(G,GG),!,
+  (GG\==G->write('#');true),
+  term_variables(GG,_Vars),
+  copy_term_nat(GG,GGG), =(GG,GGG),
+  numbervars(GGG,0,_,[attvar(skip)]),
+  if_defined_mesg_color(GGG,Ctrl),ansicall(Ctrl,format(' ~q. ',[GGG])),!.
 
 
 %= 	 	 
@@ -389,6 +396,20 @@ simplify_goal_printed(setup_call_cleanup,sccu).
 simplify_goal_printed(existence_error,'existence_error_XXXXXXXXX__\e[0m\e[1;34m%-6s\e[m\'This is text\e[0mRED__existence_error_existence_error').
 simplify_goal_printed(each_call_cleanup,eccu).
 simplify_goal_printed(call_cleanup,ccu).
+simplify_goal_printed([Var|_],'$'):-compound(Var),Var = (var_tracker(_) = _ ).
+simplify_goal_printed([Var|_],'$'):-compound(Var),Var = (fbound(_) = _ ).
+simplify_goal_printed(M:I,O):- atom(M),(M==user;M==system),!,simplify_goal_printed(I,O).
+simplify_goal_printed(M:I,O):- atom(M),!,simplify_goal_printed(I,O).
+simplify_goal_printed(catch(I,V,_),O):- var(V),!,simplify_goal_printed(I,O).
+simplify_goal_printed(always(I),O):- !,simplify_goal_printed(I,O).
+simplify_goal_printed('<meta-call>'(G),GS):-!,simplify_goal_printed(G,GS).
+simplify_goal_printed(must_det_lm(M,G),GS):-!,simplify_goal_printed(M:must_det_l(G),GS).
+simplify_goal_printed(call(G),GS):-!,simplify_goal_printed(G,GS).
+simplify_goal_printed(M:G,MS:GS):-atom(M), simplify_m(M,MS),!,simplify_goal_printed(G,GS).
+simplify_goal_printed(dinterp(_,_,I,_),O):- !,simplify_goal_printed(I,O).
+
+simplify_goal_printed(P,O):- P=..[F,I],atom_contains(F,must),!,simplify_goal_printed(I,O).
+
 simplify_goal_printed(call_term_expansion(_,A,_,B,_),O):- !, simplify_goal_printed(call_term_expansion_5('...',A,'...',B,'...'),O).
 simplify_goal_printed(A,'...'(SA)):- atom(A),atom_concat('/opt/PrologMUD/pack/logicmoo_base/prolog/logicmoo/',SA,A),!.
 simplify_goal_printed(A,'...'(SA)):- atom(A),atom_concat('/home/dmiles/lib/swipl/pack/logicmoo_base/prolog/logicmoo/',SA,A),!.
@@ -403,12 +424,13 @@ simplify_goal_printed(term_position(_,_,_,_,_),'$..term_position/4..$').
 %simplify_goal_printed(catch(G,_,_),GS):-!,simplify_goal_printed(G,GS).
 %simplify_goal_printed(skolem(V,N,_F),GS):-!,simplify_goal_printed(skeq(V,N,'..'),GS).
 
-simplify_goal_printed('<meta-call>'(G),GS):-!,simplify_goal_printed(G,GS).
-simplify_goal_printed(must_det_lm(M,G),GS):-!,simplify_goal_printed(M:must_det_l(G),GS).
-simplify_goal_printed(call(G),GS):-!,simplify_goal_printed(G,GS).
-simplify_goal_printed(M:G,MS:GS):-atom(M), simplify_m(M,MS),!,simplify_goal_printed(G,GS).
 simplify_goal_printed([F|A],[FS|AS]):- !,simplify_goal_printed(F,FS),simplify_goal_printed(A,AS).
 simplify_goal_printed(G,GS):- univ_safe_2(G,[F|A]),maplist(simplify_goal_printed,[F|A],AA),univ_safe_2(GS,AA).
+
+:- multifile(user:portray/1).
+:- dynamic(user:portray/1).
+:- discontiguous(user:portray/1).
+% user:portray
 
 
 

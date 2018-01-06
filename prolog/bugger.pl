@@ -1378,7 +1378,8 @@ show_failure(Goal):- strip_module(Goal,Why,_),show_failure(Why,Goal).
 %
 % Show Success.
 %
-show_success(_Why,Goal):-!,Goal.
+
+% show_success(_Why,Goal):-!,Goal.
 show_success(Why,Goal):- cyclic_term(Goal),dumpST,
  ((cyclic_term(Goal)->  dmsg(show_success(Why,cyclic_term)) ; 
   \+ \+ zotrace(debugm(Why,sc_success(Why,Goal))))).

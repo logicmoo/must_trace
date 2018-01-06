@@ -723,7 +723,8 @@ free_of_attrs_dmsg(Term):- term_attvars(Term,Vs),!,(Vs==[]->true;maplist(free_of
 %
 
 portray_clause_w_vars(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
-portray_clause_w_vars(Out,Msg,Vs,Options):- if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!, \+ \+ portray_clause_w_vars2(Out,SMsg,SVs,Options).
+portray_clause_w_vars(Out,Msg,Vs,Options):- fail, if_defined_local(serialize_attvars_now(Msg+Vs,SMsg+SVs),fail),!,
+     \+ \+ portray_clause_w_vars2(Out,SMsg,SVs,Options).
 portray_clause_w_vars(Out,Msg,Vs,Options):- \+ \+ portray_clause_w_vars2(Out,Msg,Vs,Options).
  
 portray_clause_w_vars2(Out,Msg,Vs,Options):- free_of_attrs_dmsg(Msg+Vs),!, portray_clause_w_vars5(Out,Msg,Vs,Options).
@@ -739,12 +740,16 @@ portray_clause_w_vars5(Out,Msg,Vs,Options):-
       attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
 
+is_var_name_goal(C):-compound(C),C=name_variable(_,_).
+
 portray_append_goals(Var,Goals,Var):- Goals==[],!.
 portray_append_goals(Var,Goals,Var):- Goals==true,!.
-portray_append_goals(Var,Goals,(Var,maplist(call,Goals))):-var(Var),!.
+portray_append_goals(Var,Goals,VarO):- exclude(is_var_name_goal,Goals,NewGoals)->Goals\==NewGoals,!,
+   portray_append_goals(Var,NewGoals,VarO).
+portray_append_goals(Var,Goals,(maplist(call,Goals),Var)):-var(Var),!.
 portray_append_goals(H:-B,Goals,H:-CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
 portray_append_goals(H:B,Goals,H:CGMsg):-!,portray_append_goals(B,Goals,CGMsg).
-portray_append_goals(Var,Goals,(Var,maplist(call,Goals))).
+portray_append_goals(Var,Goals,(maplist(call,Goals),Var)).
 
 %= 	 	 
 
