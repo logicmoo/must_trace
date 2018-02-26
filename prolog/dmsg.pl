@@ -735,7 +735,11 @@ portray_clause_w_vars2(Out,Msg,Vs,Options):-
    portray_clause_w_vars5(Out,GMsg,Vs,Options).
 
 portray_clause_w_vars5(Out,Msg,Vs,Options):-
- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
+  copy_term_nat(v(Msg,Vs,Options),v(CMsg,CVs,COptions)),
+  portray_clause_w_vars55(Out,CMsg,CVs,COptions),!.
+portray_clause_w_vars55(Out,Msg,Vs,Options):-
+ \+ \+ (( 
+ prolog_listing:do_portray_clause(Out,Msg,
   [variable_names(Vs),numbervars(true),
       attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.
@@ -973,12 +977,20 @@ dmsg(V):- zotrace((locally(set_prolog_flag(retry_undefined,none), if_defined_loc
 %
 dmsg(F,A):- locally(set_prolog_flag(retry_undefined, none),if_defined_local(dmsg0(F,A),logicmoo_util_catch:ddmsg(F,A))),!.
 
+with_output_to_main_error(G):- !,call(G).
 
-with_output_to_main_error(G):- 
+with_output_to_main_error(G):-
+  set_prolog_flag(occurs_check,false),
   stream_property(Err,file_no(2)),
   with_output_to_each(Err,G).
-   
-
+/*
+  ignore((get_thread_current_error(TErr),
+    \+ same_streams(TErr,Err),
+    with_output_to_each(TErr,G))).
+  
+same_streams(TErr,Err):- TErr==Err,!.
+same_streams(TErr,Err):- stream_property(TErr,file_no(A)),stream_property(Err,file_no(B)),!,A==B.
+*/
 
 %% wdmsg( ?X) is semidet.
 %
@@ -986,8 +998,6 @@ with_output_to_main_error(G):-
 %
 wdmsg(X):- zotrace(((current_prolog_flag(dmsg_level,never)->true;(show_source_location),
  with_all_dmsg(dmsg(X))))),!.
-
-
 
 %% wdmsg( ?F, ?X) is semidet.
 %

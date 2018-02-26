@@ -33,6 +33,7 @@ end_of_file.
 % % :- '$set_source_module'(system).
 :- meta_predicate
       must_atomic(0),
+      must_notrace(0),
       must_zotrace(0),
       must_or_die(0),      
       quietly(0),
@@ -67,6 +68,7 @@ system:must_atomic(Goal):- must_or_die(zotrace(('$sig_atomic'(Goal)))).
 
 :- module_transparent(must_notrace/1).
 :- '$hide'(must_notrace/1).
+system:must_notrace(Goal):- quietly(must_or_die(Goal)).
 system:must_zotrace(Goal):- quietly(must_or_die(Goal)).
 
 :- if(\+ current_predicate(quietly/1)).

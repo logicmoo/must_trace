@@ -157,6 +157,7 @@ vsubst(In,B,A,Out):-subst(In,B,A,Out).
 
 main_self(main).
 main_self(W):-atom(W),atom_concat('pdt_',_,W),!.
+main_self(W):-atom(W),atom_concat('client',_,W),!.
 main_self(W):-lmcache:thread_main(user,W),!.
 
 thread_self_main:- zotrace((thread_self(W),!,main_self(W))).
@@ -392,6 +393,15 @@ with_error_to_main(Goal):-
 
 
 
+%% set_thread_current_error(Id, ?Err) is det.
+%
+% Thread Current Error Stream.
+%
+                                           
+set_thread_error_stream(Id,Err):-
+   ( \+ atom(Err)->asserta_new(lmcache:thread_current_error_stream(Id,Err));true),
+   (thread_self(Id)->asserta(t_l:thread_local_error_stream(Err));true).
+
 
 %% get_thread_current_error( ?Err) is det.
 %
@@ -399,9 +409,31 @@ with_error_to_main(Goal):-
 %
 get_thread_current_error(Err):- t_l:thread_local_error_stream(Err),!.
 get_thread_current_error(Err):- thread_self(ID),lmcache:thread_current_error_stream(ID,Err),!.
-get_thread_current_error(Err):- stream_property(Err,alias(current_error)),!.
-get_thread_current_error(Err):- stream_property(Err,alias(user_error)),!.
+get_thread_current_error(Err):- !,Err=user_error.
+get_thread_current_error(Err):- stream_property(user_error,file_no(F)),\+ stream_property(main_error,file_no(F)),!,Err=user_error.
+get_thread_current_error(Err):- get_thread_current_error0(Err),!.
 get_thread_current_error(Err):- get_main_error_stream(Err),!.
+
+get_thread_current_error0(Err):- get_thread_user_error1(Err),stream_property(Err,file_no(FileNo)),FileNo>2,!.
+get_thread_current_error0(Err):- get_thread_user_error1(Err),!.
+
+get_thread_user_error1(Err):- get_thread_user_error2(user_error,Err).
+% get_thread_user_error1(Err):- get_thread_user_error2(Err,Err).
+get_thread_user_error1(Err):- get_thread_user_error2(current_error,Err).
+
+get_thread_user_error2(ErrName,Err):- nonvar(ErrName),
+   stream_property(ErrName,file_no(FileNo)),
+   stream_property(ErrName,output),FileNo\==2,
+   current_output(Out),stream_property(Out,file_no(FileNo)),
+   stream_property(Err,file_no(FileNo)),\+ current_input(Err).
+get_thread_user_error2(ErrName,Err):-
+   current_output(Out),stream_property(Out,file_no(FileNo)),
+   stream_property(Err,file_no(FileNo)),
+   stream_property(Err,output),FileNo\==2,
+   ignore((stream_property(Err,alias(ErrName)))),ignore((Err=ErrName)).
+get_thread_user_error2(ErrName,Err):- nonvar(ErrName), stream_property(Err,alias(ErrName)),stream_property(Err,output),!.
+
+
 
 %% get_main_error_stream( ?Err) is det.
 %
@@ -722,16 +754,16 @@ current_why(mfl(M,F,L)):- clause(defaultAssertMt(M),B),B,current_source_file(F:L
 % Save Well-founded Semantics Reason while executing code.
 %
 with_current_why(Why,Prolog):- 
-  nb_current('$current_why',WAS),
+  (nb_current('$current_why',WAS);WAS=[]),
   b_setval('$current_why',wp(Why,Prolog)),
   call(Prolog),
   b_setval('$current_why',WAS).
   
 
-:- nb_setval('$current_why',[]).
+:- thread_initialization(nb_setval('$current_why',[])).
 
 % source_module(M):-!,M=u.
-:-export(source_module/1).
+:- export(source_module/1).
 
 %=
 
@@ -1667,11 +1699,12 @@ y_must(Y,Goal):- catchv(Goal,E,(wdmsg(E:must_xI__xI__xI__xI__xI_(Y,Goal)),fail))
 dumpST_error(Msg):- zotrace((ddmsg(error,Msg),dumpST,wdmsg(error,Msg))).
 
 
-:- thread_self_main.
+:- thread_self_main->true;writeln(user_error,not_thread_self_main_consulting_ucatch).
 :- save_streams.
 :- initialization(save_streams,now).
 :- initialization(save_streams,after_load).
 :- initialization(save_streams,restore).
+:- thread_initialization(save_streams).
 
 
 :- setup_call_cleanup(true,set_main_error,notrace).

@@ -1563,8 +1563,8 @@ set_yes_debug_thread:-
 %
 % If Is A Console.
 %
-isConsole :- telling(user).
 isConsole :- current_output(X),!,stream_property(X,alias(user_output)).
+%isConsole :- telling(user).
 
 
 

@@ -4970,7 +4970,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 :- endif.
 */
 
-
+                          
 :- meta_predicate
 
 
@@ -5163,7 +5163,7 @@ is_main_thread:-thread_self_main,!.
 with_main_error_to_output(Goal):-
  current_output(Out),
   locally_tl(thread_local_error_stream(Out),Goal).
-
+                        
 
 with_current_io(Goal):-
   current_input(IN),current_output(OUT),get_thread_current_error(Err),
@@ -5177,7 +5177,7 @@ with_dmsg_to_main(Goal):-
   current_input(IN),current_output(OUT),
    locally_tl(thread_local_error_stream(Err),
    scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
-
+                                                  
 with_error_to_main(Goal):-
   get_main_error_stream(Err),current_error_stream(ErrWas),Err=ErrWas,!,Goal.
 with_error_to_main(Goal):- trace,
@@ -5187,17 +5187,37 @@ with_error_to_main(Goal):- trace,
    scce_orig(set_prolog_IO(IN,OUT,Err),Goal,set_prolog_IO(IN,OUT,ErrWas))).
 
 
-
-
-
-%% get_thread_current_error( ?Err) is det.
+%% set_thread_current_error(Id, ?Err) is det.
 %
 % Thread Current Error Stream.
 %
+                                           
+set_thread_error_stream(Id,Err):-
+   ( \+ atom(Err)->asserta_new(lmcache:thread_current_error_stream(Id,Err));true),
+   (thread_self(Id)->asserta(t_l:thread_local_error_stream(Err));true).
+
 get_thread_current_error(Err):- t_l:thread_local_error_stream(Err),!.
 get_thread_current_error(Err):- thread_self(ID),lmcache:thread_current_error_stream(ID,Err),!.
-get_thread_current_error(Err):- stream_property(Err,alias(user_error)),!.
+get_thread_current_error(Err):- get_thread_current_error1(Err),!.
 get_thread_current_error(Err):- get_main_error_stream(Err),!.
+
+get_thread_current_error1(Err):- get_thread_user_error2(user_error,Err).
+get_thread_current_error1(Err):- get_thread_user_error2(Err,Err).
+get_thread_current_error1(Err):- get_thread_user_error2(current_error,Err).
+
+get_thread_user_error2(ErrName,Err):- ErrName = user_error, stream_property(ErrName,file_no(FileNo)),
+                                stream_property(ErrName,output),FileNo\==2,
+                                current_output(Out),stream_property(Out,file_no(FileNo)),
+                                stream_property(Err,file_no(FileNo)),\+ current_input(Err).
+get_thread_user_error2(ErrName,Err):- Err = user_error,stream_property(Err,file_no(FileNo)),
+                                stream_property(Err,output),FileNo\==2,
+                                current_output(Out),stream_property(Out,file_no(FileNo)),
+                                ignore((stream_property(Err,alias(ErrName)))),ignore((Err=ErrName)).
+get_thread_user_error2(ErrName,Err):- Err = user_error,stream_property(Err,file_no(FileNo)),
+                                stream_property(Err,output), \+ current_input(Err),
+                                get_main_error_stream(MainErr),Err\==MainErr,
+                                ignore((stream_property(Err,alias(ErrName)))),ignore((Err=ErrName)).
+
 
 %% get_main_error_stream( ?Err) is det.
 %
@@ -7014,7 +7034,11 @@ portray_clause_w_vars2(Out,Msg,Vs,Options):- copy_term(Msg+Vs+Options,CMsg+CVs+C
    portray_clause_w_vars5(Out,CMsg+Goals,CVs,COptions).
 
 portray_clause_w_vars5(Out,Msg,Vs,Options):-
- \+ \+ ((prolog_listing:do_portray_clause(Out,Msg,
+  copy_term_nat(v(Msg,Vs,Options),v(CMsg,CVs,COptions)),
+  portray_clause_w_vars55(Out,CMsg,CVs,COptions),!.
+portray_clause_w_vars55(Out,Msg,Vs,Options):-
+ \+ \+ (( 
+ prolog_listing:do_portray_clause(Out,Msg,
   [variable_names(Vs),numbervars(true),
       attributes(ignore),
       character_escapes(true),quoted(true)|Options]))),!.

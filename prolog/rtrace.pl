@@ -97,6 +97,8 @@ maybe_leash(Some):- notrace((maybe_leash->leash(Some);true)).
 :- totally_hide(maybe_leash/1).
 
 maybe_leash:- notrace((\+ current_prolog_flag(runtime_must,keep_going), \+ non_user_console)).
+
+non_user_console:- !,fail.
 non_user_console:- \+ stream_property(current_input, tty(true)),!.
 non_user_console:- \+ stream_property(current_input,close_on_abort(false)).
 
@@ -177,16 +179,15 @@ user:prolog_exception_hook(error(_, _),_, _, _) :- fail,
 %
 
 % Version 1
-quietly1(Goal):- \+ tracing, !, Goal.
-quietly1(Goal):- notrace,Goal,trace.
-quietly1(_):- trace,!,notrace(fail).
+quietly(Goal):- \+ tracing,!,call(Goal).
+quietly(Goal):- notrace,call_cleanup(Goal,trace).
 
 % version 2 
-quietly2(Goal):- \+ tracing -> Goal ; (notrace,call_with_cleanup(scce_orig(notrace,Goal,trace),trace)).
+quietly2(Goal):- \+ tracing -> Goal ; (notrace,call_cleanup(scce_orig(notrace,Goal,trace),trace)).
 
 % version 3 
 % quietly(Goal):- !, Goal.  % for overiding
-quietly(Goal):- \+ tracing -> Goal ; 
+quietly3(Goal):- \+ tracing -> Goal ; 
  (notrace,
   (((Goal,deterministic(YN))) *->
      (YN == yes -> trace ; (trace;(notrace,fail)));
