@@ -79,8 +79,6 @@ on_x_debug(Goal):-
  setup_call_cleanup('$set_predicate_attribute'(Pred, system, 0),
    catch(Goal,E,throw(E)),'$set_predicate_attribute'(Pred, system, 1))))).
 
-
-
 :- meta_predicate(totally_hide(:)).
 totally_hide(MP):- strip_module(MP,M,P),Pred=M:P,
    % (current_prolog_flag(runtime_debug,N), N>2) -> unhide(Pred) ; 
