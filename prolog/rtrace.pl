@@ -355,12 +355,13 @@ next_rtrace:- (nortrace;(rtrace,trace,notrace(fail))).
 
 
 rtrace(Goal):- notrace(tracing)-> rtrace0((trace,Goal)) ; 
-  setup_call_cleanup(true,rtrace0((trace,Goal)),system:notrace(stop_rtrace)).
+  setup_call_cleanup(current_prolog_flag(debug,WasDebug),
+   rtrace0((trace,Goal)),(set_prolog_flag(debug,WasDebug),notrace(stop_rtrace))).
 rtrace0(Goal):-
- setup_call_cleanup(system:notrace((current_prolog_flag(debug,O),rtrace)),
+ setup_call_cleanup(notrace((current_prolog_flag(debug,O),rtrace)),
    (trace,Goal,notrace,deterministic(YN),
      (YN == true->!;next_rtrace)),
-     system:notrace(set_prolog_flag(debug,O))).
+     notrace(set_prolog_flag(debug,O))).
 
 :- '$hide'(rtrace/1).
 :- '$hide'(rtrace0/1).
@@ -380,14 +381,14 @@ rtrace_break(Goal):- stop_rtrace,trace,debugCallWhy(rtrace_break(Goal),Goal).
 
 
 
-:- unlock_predicate(system:notrace/1).
+
 :- '$hide'(quietly/1).
-%:- if_may_hide('totally_hide'(system:notrace/1,  hide_childs, 1)).
-%:- if_may_hide('totally_hide'(system:notrace/1)).
+%:- if_may_hide('totally_hide'(notrace/1,  hide_childs, 1)).
+%:- if_may_hide('totally_hide'(notrace/1)).
 :- totally_hide(system:tracing/0).
 :- totally_hide(system:notrace/0).
+:- totally_hide(system:notrace/1).
 :- totally_hide(system:trace/0).
-:- lock_predicate(system:notrace/1).
 
 %! ftrace( :Goal) is nondet.
 %

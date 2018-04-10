@@ -45,7 +45,6 @@
 
 :- use_module(library(logicmoo_util_common)).
 :- use_module(library(ucatch)).
-:- use_module(library(xlisting)).
 :- use_module(library(loop_check)).
 :- use_module(library(rtrace)).
 :- use_module(library(must_trace)).
@@ -631,7 +630,7 @@ dumptrace(_,0'a):-!,abort,!,fail.
 % dumptrace(_,0'x):-!,must(lex),!,fail.
 dumptrace(_,0'e):-!,halt(1),!.
 dumptrace(_,0'm):-!,make,fail.
-dumptrace(G,0'L):-!,xlisting(G),!,fail.
+dumptrace(G,0'L):-!,use_module(library(xlisting)),call(call,xlisting,G),!,fail.
 dumptrace(G,0'l):-!,visible(+all),show_and_do(rtrace(G)).
 % dumptrace(G,0'c):-!, show_and_do((G))*->true;true.
 dumptrace(G,0'r):-!, stop_rtrace,notrace,nortrace,srtrace,(rtrace((trace,G,notrace))),!,fail.
