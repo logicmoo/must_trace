@@ -754,10 +754,10 @@ current_why(mfl(M,F,L)):- clause(defaultAssertMt(M),B),B,current_source_file(F:L
 % Save Well-founded Semantics Reason while executing code.
 %
 with_current_why(Why,Prolog):- 
-  (nb_current('$current_why',WAS);WAS=[]),
-  b_setval('$current_why',wp(Why,Prolog)),
-  call(Prolog),
-  b_setval('$current_why',WAS).
+  (nb_current('$current_why',WAS);WAS=[])-> 
+   setup_call_cleanup(b_setval('$current_why',wp(Why,Prolog)),
+    (call(Prolog),b_setval('$current_why',WAS)),
+     b_setval('$current_why',WAS)).
   
 
 :- thread_initialization(nb_setval('$current_why',[])).
@@ -784,7 +784,7 @@ source_module(M):-loading_module(M),!.
 %
 % Loading File.
 %
-loading_file(FIn):- ((source_file0(F) *-> (retractall(t_l:last_source_file(_)),asserta(t_l:last_source_file(F))) ; (fail,t_l:last_source_file(F)))),!,F=FIn.
+loading_file(FIn):- (quietly((((source_file0(F) *-> (retractall(t_l:last_source_file(_)),asserta(t_l:last_source_file(F))) ; (fail,t_l:last_source_file(F)))),!,F=FIn))).
 
 %=
 

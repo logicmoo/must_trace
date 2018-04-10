@@ -1087,6 +1087,7 @@ has_gui_debug :- getenv('DISPLAY',NV),NV\==''.
 :- module_transparent(nodebugx/1).
 
 
+:- thread_local(tlbugger:ifHideTrace/0).
 
 %% nodebugx( :GoalX) is semidet.
 %

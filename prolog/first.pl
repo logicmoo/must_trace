@@ -47,7 +47,7 @@
             source_context_module/1,
             
             
-            tlbugger:ifHideTrace/0,
+            % tlbugger:ifHideTrace/0,
             register_var/3,
             register_var/4,
             register_var_0/4,
@@ -71,8 +71,9 @@
           ]).
 
 
+:- set_module(class(library)).
 :- thread_local(tlbugger:ifHideTrace/0).
-:- reexport(library(listing_vars)).
+%:- reexport(library(listing_vars)).
 :- use_module(library(lists)).
 
 
@@ -344,11 +345,11 @@ mpred_trace_all(W) :- forall(match_predicates(W,M,Pred,_,A),(
 %:-mpred_trace_all('$apply':_).
 %:-mpred_trace_all(system:_).
 
-:- set_module(class(library)).
+%:- set_module(class(library)).
 
 
-:- thread_local(tlbugger:ifHideTrace/0).
-:- export(tlbugger:ifHideTrace/0).
+%:- thread_local(tlbugger:ifHideTrace/0).
+%:- export(tlbugger:ifHideTrace/0).
 
 
 
