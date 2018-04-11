@@ -934,7 +934,7 @@ module_predicates_are_exported0(ModuleName):-
 :- module_transparent(export_if_noconflict/2).
 :- export(export_if_noconflict/2).
 export_if_noconflict(M,FA):- export_if_noconflict_mfa(M,FA).
-:- sexport(export_if_noconflict/2).
+:- system:import(export_if_noconflict/2).
 
 :- module_transparent(export_if_noconflict_mfa/2).
 export_if_noconflict_mfa(SM,Var):- var(Var),throw(var(export_if_noconflict_mfa(SM,Var))).
