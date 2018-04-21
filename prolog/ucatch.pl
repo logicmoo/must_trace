@@ -990,7 +990,7 @@ strip_f_module(P,P).
 % (catch/3 allows you to have these exceptions bubble up past your catch block handlers)
 % = :- meta_predicate((catchv(0, ?, 0))).
 % = :- meta_predicate((catchv(0, ?, 0))).
-:- export((catchv/3,catchv/3)).
+:- export((catchv/3)).
 
 
 %! catchv( :Goal, ?E, :GoalRecovery) is nondet.
@@ -1001,6 +1001,10 @@ catchv(Goal,E,Recovery):-
    nonvar(E) 
    -> catch(Goal,E,Recovery); % normal mode (the user knows what they want)
    catch(Goal,E,(rethrow_bubbled(E),Recovery)). % prevents promiscous mode
+
+:-export(catchv/3).
+:-system:import(catchv/3).
+
 
 %! bubbled_ex( ?Ex) is det.
 %
