@@ -31,7 +31,7 @@
 
 :- set_module(class(library)).
 :- use_module(library(logicmoo_util_common)).
-:- reexport(library(logicmoo_util_startup)).
+:- use_module(library(logicmoo_util_startup)).
 
 :- reexport(library(debug),[debug/3]).
  
