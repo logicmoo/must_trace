@@ -69,6 +69,7 @@
 
 :- ensure_loaded(library(debug)).
 :- use_module(library(dmsg)).
+:- use_module(library(logicmoo_util_strings)).
 
 
 %= 	 	 

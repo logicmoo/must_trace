@@ -126,7 +126,7 @@
             get_thread_current_error/1,
             throwNoLib/0,
             to_m_f_arity_pi/5,
-            to_pi/2,
+            to_mpi_matcher/2,
             to_pi0/3,
             warn_bad_functor/1,
             when_defined/1,
@@ -221,7 +221,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
         % sanity(0),
         sanity2(+,0),
         slow_sanity(0),
-        to_pi(?, ?),
+        to_mpi_matcher(?, ?),
         when_defined(:),
         with_main_error_to_output(0),
         with_current_io(0),
@@ -623,21 +623,59 @@ when_defined(Goal):-if_defined(Goal,true).
 :- listing(lmcache:thread_current_error_stream/2).
 :- endif.
 
-% = :- meta_predicate(to_pi(?,?)).
+% = :- meta_predicate(to_mpi_matcher(?,?)).
 
 %=
 
-%% to_pi( ?P, ?M) is semidet.
+%% to_mpi_matcher( ?P, ?M) is semidet.
 %
 % Converted To Predicate Indicator.
 %
-to_pi(P,M:P):-var(P),!,current_module(M).
-to_pi(M:P,M:P):-var(P),!,current_module(M).
-to_pi(Find,(M:PI)):-
+context_modulez(M):-nonvar(M),!.
+context_modulez(V):-context_module(M),visible_import_module(M,V).
+
+visible_import_module(M,V):- M == any,!,current_module(V).
+visible_import_module(M,V):- M == exact,!,context_module(V).
+visible_import_module(M,V):- M == direct,!,context_module(C),import_module(C,V).
+visible_import_module(M,V):- M == inherit,!,context_module(C),default_module(C,V).
+visible_import_module(M,V):- M == V,!.
+%visible_import_module(_,V):- V == baseKB.
+visible_import_module(M,V):- \+ atom(M),!,V=M.
+visible_import_module(M,V):- import_module(M,V).
+visible_import_module(M,V):- default_module(M,V), M\==V, \+ import_module(M,V).
+
+
+to_mpi_matcher(P,Matcher):-var(P),!,context_modulez(M),to_mpi_matcher(M:P,Matcher).
+to_mpi_matcher(Name/Arity, Matcher) :- atom(Name),integer(Arity),functor(Head, Name, Arity),!,
+ to_mpi_matcher(Head,Matcher).
+to_mpi_matcher(M:P,M:P):- var(M),!,to_mpi_matcher(P,M:P).
+%to_mpi_matcher(M:P,MP):- var(P),!,to_mpi_matcher(M:P,MP).
+
+to_mpi_matcher(CFind,WPI):- 
+ strip_module(CFind,SC,Find),
+ (CFind==Find -> C = any ; C = SC),
  locally(set_prolog_flag(runtime_debug,0),
-   (once(catch(match_predicates(Find,Found),_,fail)),Found=[_|_],!,member(M:F/A,Found),functor(PI,F,A))).
-to_pi(M:Find,M:PI):-!,current_module(M),to_pi0(M,Find,M:PI).
-to_pi(Find,M:PI):-current_module(M),to_pi0(M,Find,M:PI).
+   ((once(catch(match_predicates(CFind,Found),_,fail)),Found=[_|_],
+    findall(WPI,
+    ((member(M:F/A,Found),
+      functor(PI,F,A),
+     (predicate_property(M:PI,imported_from(W)) -> true ; W=M),
+      visible_import_module(C,W),
+      WPI = W:PI, 
+      \+ predicate_property(WPI,imported_from(_)))),
+     Remaining)))),
+     Remaining=[_|_],!,
+     sort(Remaining,Set),     
+     member(WPI,Set).
+     
+
+%to_mpi_matcher(M:Find,MPI):-context_modulez(M),to_pi0(M,Find,MPI).
+%to_mpi_matcher(M:PI, Head) :- !, to_mpi_matcher(PI, Head).
+%to_mpi_matcher(Find,M:PI):-context_modulez(M),to_pi0(M,Find,M:PI).
+
+to_pi0(M,Find,M:PI):- atom(Find),!,when(nonvar(PI),(nonvar(PI),functor(PI,Find,_))).
+to_pi0(M,Find/A,M:PI):-var(Find),number(A),!,when(nonvar(PI),(nonvar(PI),functor(PI,_,A))).
+to_pi0(M,Find,PI):-get_pi(Find,PI0),!,(PI0\=(_:_)->(context_modulez(M),PI=(M:PI0));PI=PI0).
 
 
 %=
@@ -646,10 +684,6 @@ to_pi(Find,M:PI):-current_module(M),to_pi0(M,Find,M:PI).
 %
 % Converted To Predicate Indicator Primary Helper.
 %
-to_pi0(M,Find,M:PI):- atom(Find),!,when(nonvar(PI),(nonvar(PI),functor(PI,Find,_))).
-to_pi0(M,Find/A,M:PI):-var(Find),number(A),!,when(nonvar(PI),(nonvar(PI),functor(PI,_,A))).
-to_pi0(M,Find,PI):-get_pi(Find,PI0),!,(PI0\=(_:_)->(current_module(M),PI=(M:PI0));PI=PI0).
-
 
 :- thread_local(t_l:last_src_loc/2).
 
