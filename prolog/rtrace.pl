@@ -33,8 +33,8 @@
 :- module_transparent(nortrace/0).
 :- use_module(library(logicmoo_util_startup)).
 
-:- thread_local(t_l:rtracing/0).
-:- thread_local(t_l:tracer_reset/1).
+:-thread_local(t_l:rtracing/0).
+:-thread_local(t_l:tracer_reset/1).
 :-thread_local(t_l:wasguitracer/1).
 :-thread_local(t_l:wastracer/1).
 

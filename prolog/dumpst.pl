@@ -69,7 +69,7 @@
 
 :- ensure_loaded(library(debug)).
 :- use_module(library(dmsg)).
-:- use_module(library(logicmoo_util_strings)).
+%:- use_module(library(logicmoo_util_strings)).
 
 
 %= 	 	 
@@ -644,7 +644,7 @@ dumptrace(_G,'p'):- in_cmt(if_defined(pp_DB,fail)),!,fail.
 
 
 dumptrace(_,C):-fmt(unused_keypress(C)),!,fail.
-% )))))))))))))) %
+% )))))))))))))) %  '
 
 %= 	 	 
 
@@ -656,6 +656,7 @@ dumptrace_ret(G):- zotrace((leash(+all),visible(+all),visible(+unify),trace)),G.
 
 :- use_module(library(logicmoo_util_common)).
 
+:- use_module(library(logicmoo_util_startup)).
 :- fixup_exports.
 
 
