@@ -2305,7 +2305,7 @@ cleanup_strings:-garbage_collect_atoms.
 %
 % Loading Module.
 %
-loading_module(M,Why):- quiently(loading_module0(M,Why)).
+loading_module(M,Why):- quietly(loading_module0(M,Why)).
 
 loading_module0(M,use_module(U)):- if_defined(parent_goal(_:catch(M:use_module(U),_,_),_)).
 loading_module0(M,ensure_loaded(U)):- if_defined(parent_goal(_:catch(M:ensure_loaded(U),_,_),_)).

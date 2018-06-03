@@ -196,6 +196,7 @@ hide_non_user_console:-current_input(In),stream_property(In, close_on_exec(true)
 		on_xf_log_cont_l(0),
 		on_x_log_throw(0),
                 with_current_why(*,0),
+                with_only_current_why(*,0),
 
 
 		on_x_log_cont(0),
@@ -727,8 +728,8 @@ show_new_src_location(K,FL):- retractall(t_l:last_src_loc(K,_)),format_to_error(
 %
 sl_to_filename(W,W):-atom(W),exists_file(W),!.
 sl_to_filename(W,W):-atom(W),!.
-sl_to_filename(_:W,W):-atom(W),!.
 sl_to_filename(mfl(_,F,_),F):-atom(F),!.
+sl_to_filename(_:W,W):-atom(W),!.
 sl_to_filename(W,W).
 sl_to_filename(W,To):-nonvar(To),To=(W:_),atom(W),!.
 
@@ -743,12 +744,12 @@ sl_to_filename(W,To):-nonvar(To),To=(W:_),atom(W),!.
 %
 % Current Source Location.
 %
-current_source_file(F:L):- clause(current_source_location0(W,L),Body),catchv(Body,_,fail),
+current_source_file(F:L):- clause(current_source_location0(W,L),Body),notrace(catch(Body,_,fail)),
  sl_to_filename(W,F),!.
 current_source_file(F):- F = unknown.
 
 
-source_ctx(B:L):-current_source_file(F:L),file_base_name(F,B).
+source_ctx(B:L):- must((current_source_file(F:L),file_base_name(F,B))).
 
 %=
 
@@ -757,16 +758,22 @@ source_ctx(B:L):-current_source_file(F:L),file_base_name(F,B).
 % Current Source Location Primary Helper.
 %
 current_source_location0(F,why):- t_l:current_why_source(F).
-current_source_location0(F,L):-source_location(F,L),!.
-current_source_location0(F,L):-prolog_load_context(file,F),current_input(S),line_position(S,L),!.
-current_source_location0(F,L-C):-loading_file(F),stream_property(S,file_name(F)),line_count(S,L),character_count(S,C),!.
-current_source_location0(F,L):-  loading_file(F),stream_property(S,file_name(F)),line_count(S,L),!.
-current_source_location0(F,L):- prolog_load_context(file,F),!,ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
-current_source_location0(F,L):-  loading_file(F),L= (-1).
-current_source_location0(F,L):- current_input(S),stream_property(S,position(L)),stream_property(S,alias(F)).
-current_source_location0(M,source):- source_module(M),!.
-current_source_location0(F,L):- current_filesource(F),ignore((prolog_load_context(stream,S),!,line_count(S,L))),!.
+current_source_location0(F,L):- source_location(F,L),!.
+current_source_location0(F,L):- prolog_load_context(file,F),current_input(S),line_position(S,L),!.
+current_source_location0(F,L):- prolog_load_context(stream,S),line_or_char_count(S,L),stream_property(S,file(F)),!.
+current_source_location0(F,L):- loading_file(F),stream_property(S,file_name(F)),line_or_char_count(S,L),!.
+current_source_location0(F,L):- prolog_load_context(file,F),!,ignore((prolog_load_context(stream,S),!,line_or_char_count(S,L))),!.
+current_source_location0(F,L):- loading_file(F),L= (-1).
+current_source_location0(F,L):- current_input(S),stream_property(S,alias(F)),line_or_char_count(S,L).
+current_source_location0(F,L):- current_filesource(F),ignore((prolog_load_context(stream,S),!,line_or_char_count(S,L))),!.
+current_source_location0(M,module):- source_module(M),!.
 current_source_location0(M,typein):- '$current_typein_module'(M).
+
+line_or_char_count(S,_):- \+ is_stream(S),!,fail.
+line_or_char_count(S,L):- line_count(S,L),L\==0,!.
+line_or_char_count(S,L):- stream_property(S,position(P)),stream_position_data(line_count,P,L),!.
+line_or_char_count(S,L):- line_position(S,L),L\==1,!.
+line_or_char_count(S,L):- character_count(S,C),L is -C.
 
 :-export(current_why/1).
 :-module_transparent(current_why/1).
@@ -777,27 +784,39 @@ current_source_location0(M,typein):- '$current_typein_module'(M).
 %
 % Current Generation Of Proof.
 %
-current_why(Why):- nb_current('$current_why',wp(Why,_)).
-current_why(mfl(M,F,L)):- current_source_file(F:L),var(L),F= module(M),!.
-current_why(mfl(M,F,L)):- source_module(M),clause_b(mtHybrid(M)),current_source_file(F:L),!.
-current_why(mfl(M,F,L)):- clause(defaultAssertMt(M),B),B,current_source_file(F:L),!.
+current_why(Why):- nb_current('$current_why',wp(Why,_)),!.
+current_why(mfl(M,F,L)):- current_mfl(M,F,L).
+
+current_mfl(M,F,L):- current_source_file(F:L),var(L),F= module(M),!.
+current_mfl(M,F,L):- source_module(M),clause_b(mtHybrid(M)),current_source_file(F:L),!.
+current_mfl(M,F,L):- clause(defaultAssertMt(M),B),call(B),current_source_file(F:L),!.
 
 
-%% with_current_why( +Why, +:Prolog) is semidet.
+%% with_only_current_why( +Why, +:Prolog) is semidet.
 %
-% Save Well-founded Semantics Reason while executing code.
+% Restart and Save the Well-founded Semantic Reason while executing code.
 %
-with_current_why(Why,Prolog):- 
+with_only_current_why(Why,Prolog):- 
   (nb_current('$current_why',WAS);WAS=[])-> 
    setup_call_cleanup(b_setval('$current_why',wp(Why,Prolog)),
     (call(Prolog),b_setval('$current_why',WAS)),
      b_setval('$current_why',WAS)).
-  
+
+%% with_current_why( +Why, +:Prolog) is semidet.
+%
+% Save Well-founded Semantic Reason recursively while executing code.
+%
+with_current_why(S,Call):-
+  current_why(UU),
+  (S=@=UU -> Call;
+  (((UU=(U,_),S=@=U) -> Call; 
+  with_only_current_why((S,UU),Call)))).
 
 :- thread_initialization(nb_setval('$current_why',[])).
 
 % source_module(M):-!,M=u.
 :- export(source_module/1).
+:- module_transparent(source_module/1).
 
 %=
 
@@ -806,8 +825,9 @@ with_current_why(Why,Prolog):-
 % Source Module.
 %
 source_module(M):-nonvar(M),!,source_module(M0),!,(M0=M).
-source_module(M):-'$current_source_module'(M),!.
-source_module(M):-loading_module(M),!.
+source_module(M):- '$current_source_module'(M),!.
+source_module(M):- '$set_source_module'(M,M),!.
+source_module(M):- loading_module(M),!.
 
 :- thread_local(t_l:last_source_file/1).
 :- export(loading_file/1).
@@ -1774,7 +1794,9 @@ ge_must_sanity(sanity,Goal,sanity2(FL,Goal)):- source_ctx(FL).
 ge_must_sanity(must,Goal,must2(FL,Goal)):- source_ctx(FL).
 % ge_must_sanity(must_det_l,Goal,must2(FL,Goal)):- source_ctx(FL).
 
-system:goal_expansion(I,P,O,P):- compound(I), source_location(_,_), once(ge_must_sanity(I,O)),I \== O.
+system:goal_expansion(I,P,O,P):- notrace((compound(I), source_location(_,_))),
+  (prolog_load_context(module, Module),default_module(Module,ucatch)),
+  once(ge_must_sanity(I,O))->I \== O.
 
 :- dynamic(inlinedPred/1).
 
