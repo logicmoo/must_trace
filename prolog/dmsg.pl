@@ -38,6 +38,7 @@
                loggerReFmt/2,
                logger_property/3,
 
+            univ_safe_2/2,
             cls/0,
             dmsg0/1,dmsg0/2,dmsg00/1,
             dmsg1/1,
@@ -151,6 +152,10 @@ dmsg000/1,
         with_output_to_main(0),
         with_output_to_stream(?, 0),
         with_show_dmsg(?, 0).
+
+
+univ_safe_2(A,B):- compound(A),compound_name_arity(A,F,0),!,F=..B.
+univ_safe_2(A,B):- A=..B.
 
 :- meta_predicate if_defined_local(:,0).
 if_defined_local(G,Else):- current_predicate(_,G)->G;Else.
@@ -1106,9 +1111,6 @@ dmsg000(V):-
 % = :- export(dmsg1/1).
 
 
-univ_safe_2(A,B):- compound(A),compound_name_arity(A,F,0),!,F=..B.
-univ_safe_2(A,B):- A=..B.
-
 %= 	 	 
 
 %% dmsg1( ?V) is det.
@@ -1720,6 +1722,8 @@ writeFailureLog(E,X):-
 		fmt('\n% error: ~q ~q\n',[E,X]),!,flush_output).
 
 %unknown(Old, autoload).
+
+
 
 
 %= 	 	 
