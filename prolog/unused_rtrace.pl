@@ -6649,7 +6649,7 @@ dmsg_hides_message(C):-  tlbugger:dmsg_match(HideShow,Matcher),matches_term(Matc
 %
 matches_term(Filter,_):- var(Filter),!.
 matches_term(Filter,Term):- var(Term),!,Filter=var.
-matches_term(Filter,Term):- ( \+ \+ (matches_term0(Filter,Term))),!.
+matches_term(Filter,Term):- call_call( \+ \+ (matches_term0(Filter,Term))),!.
 
 %% contains_atom( ?V, ?A) is det.
 %

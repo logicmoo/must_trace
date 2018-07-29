@@ -139,7 +139,7 @@ parent_goal(Goal,Nth):-  find_parent_frame_attribute(goal,Goal,Nth,_RealNth,_Fra
 
 %% nth_parent_goal( ?Frame, ?Goal, ?Nth) is semidet.
 %
-% Nth Parent Goal.
+% Nth Parent Goal.                              
 %
 nth_parent_goal(Frame,Goal,Nth):- Nth>0, Nth2 is Nth-1, prolog_frame_attribute(Frame,parent,PFrame),!,zotrace((nth_parent_goal(PFrame,Goal,Nth2))).
 nth_parent_goal(Frame,Goal,_):- zotrace((prolog_frame_attribute(Frame,goal,Goal))),!.
@@ -153,7 +153,9 @@ nth_parent_goal(Frame,Goal,_):- zotrace((prolog_frame_attribute(Frame,goal,Goal)
 % Find Parent Frame Attribute.
 %
 find_parent_frame_attribute(Attrib,Term,Nth,RealNth,FrameNum):-quietly((ignore(Attrib=goal),prolog_current_frame(Frame),
-                                                current_frames(Frame,Attrib,5,NextList))),!,nth1(Nth,NextList,RealNth-FrameNum-Term).
+                  current_frames(Frame,Attrib,5,NextList))),!,                 
+                  catch(nth1(Nth,NextList,Out),E,(wdmsg(E),trace,nth1(Nth,NextList,Out))),
+                  Out = RealNth-FrameNum-Term.
 
 
 

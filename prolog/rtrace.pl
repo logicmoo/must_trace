@@ -38,6 +38,10 @@
 :-thread_local(t_l:wasguitracer/1).
 :-thread_local(t_l:wastracer/1).
 
+:- 'meta_predicate'(call_call(0)).
+call_call(G):-call(G).
+
+
 :- meta_predicate
    rtrace(0),
    restore_trace(0),

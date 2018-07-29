@@ -370,7 +370,7 @@ contains_atom(V,A):-sub_term(VV,V),nonvar(VV),cfunctor(VV,A,_).
 matches_term0(Filter,Term):- Term = Filter.
 matches_term0(Filter,Term):- atomic(Filter),!,contains_atom(Term,Filter).
 matches_term0(F/A,Term):- (var(A)->member(A,[0,1,2,3,4]);true), cfunctor(Filter,F,A), matches_term0(Filter,Term).
-matches_term0(Filter,Term):- sub_term(STerm,Term),nonvar(STerm),matches_term0(Filter,STerm),!.
+matches_term0(Filter,Term):- sub_term(STerm,Term),nonvar(STerm),call(call,matches_term0(Filter,STerm)),!.
 
 
 %= 	 	 

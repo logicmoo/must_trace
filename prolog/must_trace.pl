@@ -53,8 +53,8 @@
 % Must Be Successfull.
 %
 
-% must(Goal):- !,Goal.
-must(Goal):- quietly(get_must(Goal,MGoal))-> call(MGoal).
+must(Goal):- (Goal*->true;must_0(Goal)).
+must_0(Goal):- quietly(get_must(Goal,MGoal))-> call(MGoal).
 
 %% get_must( ?Goal, ?CGoal) is semidet.
 %
