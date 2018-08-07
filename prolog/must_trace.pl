@@ -18,7 +18,8 @@
       must_det/1, % Goal must succeed determistically
       sanity/1,  % like assertion but adds trace control
       nop/1, % syntactic comment
-      scce_orig/3
+      scce_orig/3,
+      must_or_rtrace/1
     ]).
 
 :- meta_predicate
@@ -27,6 +28,7 @@
         must_det(0),
         nop(*),
         sanity(0),
+        must_or_rtrace(0),
         scce_orig(0,0,0).
 
 :- set_module(class(library)).
@@ -55,6 +57,8 @@
 
 must(Goal):- (Goal*->true;must_0(Goal)).
 must_0(Goal):- quietly(get_must(Goal,MGoal))-> call(MGoal).
+
+must_or_rtrace(P):- call(P) *-> true ; rtrace(P).
 
 %% get_must( ?Goal, ?CGoal) is semidet.
 %
