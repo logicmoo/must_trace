@@ -323,10 +323,10 @@ with_unlocked_pred(M:Pred,(
 % Managed Predicate  Trace childs.
 %
 mpred_trace_childs(W) :- if_may_hide(forall(match_predicates(W,M,Pred,_,_),(
-with_unlocked_pred(M:Pred,(
-'$set_predicate_attribute'(M:Pred, trace, 0),
-%'$set_predicate_attribute'(M:Pred, noprofile, 0),
-'$set_predicate_attribute'(M:Pred, hide_childs, 0)))))).   
+   with_unlocked_pred(M:Pred,(
+   '$set_predicate_attribute'(M:Pred, trace, 0),
+   %'$set_predicate_attribute'(M:Pred, noprofile, 0),
+   '$set_predicate_attribute'(M:Pred, hide_childs, 0)))))).   
 
 
 %= 	 	 

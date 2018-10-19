@@ -215,7 +215,7 @@
      op(1150,fx,(baseKB:kb_shared))
 
           ]).
-:- meta_predicate with_skip_bugger(0),on_x_fail(0).
+:- meta_predicate with_skip_bugger(0).
 :- meta_predicate 
     do_ref_job(0,*),
         bugger_atom_change(:, -),
@@ -1658,20 +1658,30 @@ functor_source_file(M,P,F,A,File):-functor_source_file0(M,P,F,A,File). % sanity(
 functor_source_file0(M,P,F,A,File):-current_predicate(F/A),functor_safe(P,F,A),source_file(P,File),predicate_module(P,M).
 
 
-
+localize_module(C):- nonvar(C),!.
+localize_module(C):- context_module(CM),(C=CM;(current_module(C),C\==CM)).
 
 %% predicate_module( ?P, ?M) is semidet.
 %
 % Predicate Module.
 %
-predicate_module(P,M):- var(P),!,trace_or_throw(var_predicate_module(P,M)).
-predicate_module(P,M):- predicate_property(P,imported_from(M)),!.
-predicate_module(F/A,M):- atom(F),integer(A),functor(P,F,A),P\==F/A,predicate_property(P,imported_from(M)),!.
-predicate_module(Ctx:P,M):- Ctx:predicate_property(P,imported_from(M)),!.
-predicate_module(Ctx:F/A,M):- Ctx:((atom(F),integer(A),functor(P,F,A),P\==F/A,predicate_property(P,imported_from(M)))),!.
+predicate_module(MPI,M):- strip_module(MPI,C,PI),predicate_module(C,PI,M),!.
 predicate_module(M:_,M):-!. %strip_module(P,M,_F),!.
 predicate_module(_P,user):-!. %strip_module(P,M,_F),!.
 % predicate_module(P,M):- strip_module(P,M,_F),!.
+                     
+predicate_module(C,PI,M):- var(PI),!,localize_module(C),C:predicate_property(PI,imported_from(M)),!.
+predicate_module(C,'//'(F,A),M):-!,atom(F),integer(A),AA is A +2,functor(P,F,AA),predicate_module_0(C,P,M).
+predicate_module(C,'/'(F,A),M):- !,atom(F),integer(A),functor(P,F,A),predicate_module_0(C,P,M).
+predicate_module(C,P,M):- predicate_module_0(C,P,M).
+
+predicate_module_0(C,P,M):- atom(C),!,predicate_module_atom(C,P,M).
+predicate_module_0(C,P,M):- var(P),!,trace_or_throw(predicate_module_0(C,P,M)).
+predicate_module_0(C,P,M):- localize_module(C),predicate_module_atom(user,P,M),!,ignore(C=M).
+
+predicate_module_atom(C,P,M):- C:predicate_property(P,imported_from(M)).
+predicate_module_atom(C,P,M):- C:predicate_property(P,defined),!,M=C.
+
 
 
 
